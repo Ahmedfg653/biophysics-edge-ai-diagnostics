@@ -1,0 +1,8 @@
+{
+  "name": "Biophysics Edge AI — Anthropic Grant Proposal",
+  "description": "100% Offline On-Device Biophysical Diagnostics System on Xiaomi 15T Pro — Technical Grant Proposal & Interactive Simulation Showcase for Anthropic AI for Science & External Researcher Access Program.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
