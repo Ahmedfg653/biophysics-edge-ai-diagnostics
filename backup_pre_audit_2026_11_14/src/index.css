@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+@import "highlight.js/styles/github.css";
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    font-family: 'Plus Jakarta Sans', 'Inter', 'Cairo', system-ui, -apple-system, sans-serif;
+    scroll-padding-top: 5rem;
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  html[dir="rtl"] {
+    font-family: 'Cairo', 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .font-serif-editorial {
+    font-family: 'Source Serif 4', 'Cairo', Georgia, serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', 'Inter', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.calc-usd-figure {
+  font-family: 'JetBrains Mono', 'Inter', monospace !important;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Custom subtle academic scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* KaTeX academic monograph contrast polish */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.75rem 0;
+  margin: 0.5rem 0;
+}
+
+.katex {
+  color: #0f172a;
+  font-size: 0.96em;
+}
+
+/* Highlight.js background override for seamless IDE integration */
+pre code.hljs {
+  background: transparent !important;
+  padding: 0 !important;
+  color: #0f172a;
+}
+
+/* Print / Export PDF Styles */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  header,
+  .no-print {
+    display: none !important;
+  }
+  section {
+    break-inside: avoid-page;
+    border-color: #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .katex {
+    color: #0f172a !important;
+  }
+}

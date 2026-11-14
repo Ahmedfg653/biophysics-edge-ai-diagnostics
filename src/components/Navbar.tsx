@@ -1,56 +1,65 @@
 import React from 'react';
-import { SUPERVISION_BANNER } from '../data/bilingualContent';
+import { Globe, ShieldAlert } from 'lucide-react';
 import type { Language } from '../utils/biophysicsMath';
 
 interface NavbarProps {
   lang: Language;
+  onToggleLanguage: (nextLang: Language) => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ lang }) => {
+export const Navbar: React.FC<NavbarProps> = ({ lang, onToggleLanguage }) => {
+  const isAr = lang === 'ar';
+
   const navItems = [
     {
-      href: '#humanitarian',
-      label: lang === 'en' ? 'Global Crisis' : 'الأزمة العالمية',
-    },
-    {
-      href: '#supervision',
-      label: lang === 'en' ? 'Faculty & FA-HISTS' : 'هيئة الإشراف والمعهد',
-    },
-    {
-      href: '#public-goods',
-      label: lang === 'en' ? 'Public Goods' : 'المنافع العلمية المفتوحة',
+      href: '#evidence-audit',
+      label: isAr ? 'مصفوفة التدقيق (12)' : 'Audit Matrix (12)',
     },
     {
       href: '#simulators',
-      label: lang === 'en' ? 'Live Simulators' : 'المحاكيات الحية',
+      label: isAr ? 'المختبرات الاصطناعية' : 'Synthetic Labs',
+    },
+    {
+      href: '#anthropic',
+      label: isAr ? 'برامج Anthropic والميزانية' : 'Anthropic & Budget',
+    },
+    {
+      href: '#supervision',
+      label: isAr ? 'الفريق وإشراف FA-HISTS' : 'Team & FA-HISTS',
     },
     {
       href: '#codebase',
-      label: lang === 'en' ? 'C++17 & Kotlin' : 'الأكواد التنفيذية',
+      label: isAr ? 'معمارية C++17 / Kotlin' : 'C++17 & Kotlin',
     },
   ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        {/* Brand Identity + Official Faculty Supervision Line */}
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
+        {/* Brand Identity + Audited Academic Roles */}
         <a href="#top" className="flex flex-col text-start group min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold tracking-tight text-[#0F172A] group-hover:text-[#0284C7] transition-colors truncate">
-              {lang === 'en'
-                ? 'Ahmed Elshal · Dr. Hayam Abd El-Mardy · Dr. Osama Helmy'
-                : 'أحمد الشال · د. هيام عبد المرضي · د. أسامة حلمي'}
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 text-amber-950 border border-amber-300 font-mono text-[10px] font-bold uppercase shrink-0">
+              <ShieldAlert className="w-3 h-3 text-amber-800" />
+              {isAr ? 'نموذج بحثي فقط' : 'RESEARCH PROTOTYPE'}
+            </span>
+            <span className="text-xs font-bold tracking-tight text-[#0F172A] group-hover:text-[#0284C7] transition-colors truncate">
+              {isAr
+                ? 'أحمد الشال · إشراف: د. هيام عبد المرضي و د. أسامة حلمي'
+                : 'Ahmed Elshal · Advisors: Dr. Hayam Abd El-Mardy & Dr. Osama Helmy'}
             </span>
           </div>
-          <span className="text-[11px] font-medium text-[#0284C7] truncate">
-            {SUPERVISION_BANNER.supervisionStatement[lang]}
+          <span className="text-[10.5px] font-medium text-slate-600 mt-0.5 truncate">
+            {isAr
+              ? 'شعبة علوم الحاسب — معهد المستقبل العالي للدراسات التكنولوجية المتخصصة (FA-HISTS)'
+              : 'Computer Science Dept. — Higher Future Institute for Specialized Technological Studies (FA-HISTS)'}
           </span>
         </a>
 
-        {/* Single Top Bar Navigation (5 links max, single-line labels) */}
+        {/* Primary Navigation Links */}
         <nav
-          aria-label={lang === 'en' ? 'Primary navigation' : 'التنقل الرئيسي'}
-          className="hidden lg:flex items-center gap-6"
+          aria-label={isAr ? 'التنقل الرئيسي' : 'Primary navigation'}
+          className="hidden xl:flex items-center gap-3.5 shrink-0"
         >
           {navItems.map((item) => (
             <a
@@ -63,13 +72,23 @@ export const Navbar: React.FC<NavbarProps> = ({ lang }) => {
           ))}
         </nav>
 
-        {/* Single Primary CTA */}
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Language Toggle & Grant Dossier CTA */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            id="lang-toggle-btn"
+            onClick={() => onToggleLanguage(isAr ? 'en' : 'ar')}
+            aria-label={isAr ? 'Switch to English' : 'التبديل إلى العربية'}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 transition cursor-pointer"
+          >
+            <Globe className="w-3.5 h-3.5 text-blue-800" />
+            <span>{isAr ? 'EN' : 'AR / العربية'}</span>
+          </button>
+
           <a
             href="#grant-package"
-            className="inline-flex items-center justify-center rounded-md bg-[#0F172A] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E293B] transition-colors whitespace-nowrap"
+            className="inline-flex items-center justify-center rounded-lg bg-[#0F172A] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E293B] transition-colors whitespace-nowrap"
           >
-            {lang === 'en' ? 'Anthropic Grant Package' : 'ملف التقديم لمنحة Anthropic'}
+            {isAr ? 'ملف المنحة' : 'Grant Dossier'}
           </a>
         </div>
       </div>

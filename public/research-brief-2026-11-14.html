@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research Brief (2026-11-14) — Quality-Gated Smartphone rPPG & Selective Abstention Architecture</title>
+  <style>
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      color: #0f172a;
+      background: #ffffff;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      line-height: 1.65;
+    }
+    .banner {
+      border: 2px solid #b45309;
+      background: #fffbeb;
+      color: #92400e;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-family: system-ui, sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 26px; line-height: 1.3; margin-bottom: 8px; }
+    h2 { font-size: 19px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 28px; }
+    h3 { font-size: 15px; margin-top: 18px; margin-bottom: 6px; }
+    p, li { font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-family: system-ui, sans-serif; font-size: 12.5px; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; font-weight: 700; }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .sim { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+    .imp { background: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+    .prop { background: #e0f2fe; color: #075985; border: 1px solid #0ea5e9; }
+    .val0 { background: #f1f5f9; color: #475569; border: 1px solid #94a3b8; }
+    .ar { direction: rtl; text-align: right; font-family: system-ui, Tahoma, sans-serif; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 12px; }
+    .print-btn {
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    @media print { .print-btn { display: none; } }
+  </style>
+</head>
+<body>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF (طباعة / حفظ كملف PDF)</button>
+
+  <div class="banner">
+    RESEARCH PROTOTYPE ONLY — NOT FOR MEDICAL DIAGNOSIS OR TREATMENT DECISIONS.<br/>
+    CLINICAL VALIDATION STATUS: Clinical validation has not yet been conducted (0 clinically validated claims).<br/>
+    نموذج بحثي أولي فقط — غير مخصص للتشخيص الطبي أو اتخاذ القرارات العلاجية. لم يُجرَ أي تحقق سريري على البشر حتى الآن.
+  </div>
+
+  <h1>Uncertainty-Aware Abstention for Smartphone-Based Remote PPG Under Motion and Illumination Variations: A Quality-Gated Research Prototype, Signal Reliability, Selective Prediction, and On-Device Processing Architecture</h1>
+  <div class="ar">
+    <strong>العنوان العلمي المعتمد بعد التدقيق (14 نوفمبر 2026):</strong><br/>
+    الامتناع الواعي بعدم اليقين لتقدير النبض البصري عن بُعد (rPPG) عبر الهاتف الذكي تحت تغيرات الحركة والإضاءة: نموذج بحثي أولي محكوم بجودة الإشارة، التنبؤ الانتقائي، ومعمارية المعالجة المحلية
+  </div>
+
+  <p>
+    <strong>Lead Student Researcher &amp; Prototype Developer:</strong> Ahmed Elshal (Computer Science Department, Higher Future Institute for Specialized Technological Studies — Future Academy / FA-HISTS, Cairo, Egypt; Email: <code>Ahmed.elshal224@gmail.com</code>; ORCID: <code>0009-0009-2697-1139</code>).<br/>
+    <strong>Academic Advisors / Faculty Mentors:</strong> Dr. Hayam Abd El-Mardy &amp; Dr. Osama Helmy (Computer Science Department, FA-HISTS — <em>Formal written institutional endorsement to be completed prior to any PI-led external grant submission</em>).<br/>
+    <strong>Institutional Affiliation Note:</strong> Dell EMC Academic Alliance and Huawei ICT Academy are curriculum/training memberships of Future Academy and are not sponsors or clinical endorsers of this prototype.<br/>
+    <strong>IRB / Ethics Status:</strong> No prospective human-subject data collection or clinical trial has been conducted to date.
+  </p>
+
+  <h2>1. First-Screen Five Reviewer Questions (Executive Summary)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Reviewer Question</th>
+        <th>Audited Scientific &amp; Engineering Answer</th>
+        <th>Evidence Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. What is the specific scientific problem?</strong></td>
+        <td>Smartphone camera remote photoplethysmography (rPPG) suffers severe signal corruption under hand/head motion, optical defocus blur, and ambient illumination shifts—causing unconstrained estimators to output confident but physiologically invalid heart-rate (HR) estimates.</td>
+        <td><span class="badge imp">IMPLEMENTED</span></td>
+      </tr>
+      <tr>
+        <td><strong>2. What is the new hypothesis / contribution?</strong></td>
+        <td>Enforcing a two-stage Uncertainty-Aware Selective Abstention Gate—combining Laplacian focus variance <code>Var(&nabla;&sup2;I) &ge; &tau;_focus</code> and composite Signal Quality Index <code>SQI &ge; &tau;_SQI</code>—reduces Selective Risk (HR MAE in BPM) at an explicit Coverage trade-off within a 16KB page-aligned C++17/Kotlin on-device pipeline.</td>
+        <td><span class="badge prop">PROPOSED</span></td>
+      </tr>
+      <tr>
+        <td><strong>3. What has actually been implemented?</strong></td>
+        <td>(a) Deterministic synthetic signal generators and unit-tested mathematical functions in <code>src/utils/biophysicsMath.ts</code>, (b) interactive Selective Prediction Risk–Coverage &amp; signal-quality laboratories, and (c) complete reference C++17 NDK / Kotlin architectural blueprints (64-byte cache-aligned structs with <code>static_assert</code>, reflection-padded <code>filtfilt</code>, local 4-timestamp clock-offset estimator).</td>
+        <td><span class="badge sim">SIMULATED</span></td>
+      </tr>
+      <tr>
+        <td><strong>4. What empirical evidence is available right now?</strong></td>
+        <td>Automated unit tests (<code>node:test</code>) verify the synthetic POS rPPG filter, SQI/Laplacian abstention logic, Risk–Coverage monotonicity, and Bradford D65 chromatic adaptation math. Silicon latency numbers (0.68 ms NPU) are currently Estimated Design Targets awaiting physical Dimensity 9400+ trace logs.</td>
+        <td><span class="badge sim">SIMULATED</span></td>
+      </tr>
+      <tr>
+        <td><strong>5. What remains unproven?</strong></td>
+        <td><strong>Clinical validation has not yet been conducted (0 clinically validated claims).</strong> Subject-independent retrospective evaluation on PURE and UBFC-rPPG with frozen validation thresholds, physical smartphone NPU profiling, and IRB-approved clinical studies for exploratory hypotheses remain future work.</td>
+        <td><span class="badge val0">CLINICALLY VALIDATED: 0</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Corrected Medical &amp; Technical Standards Mapping</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Standard</th>
+        <th>Scope &amp; Applicable Device Type</th>
+        <th>Audit Correction Applied in Repository</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>IEEE Std 1708-2025</strong></td>
+        <td>Wearable, Cuffless Blood Pressure Measuring Devices (static accuracy, induced BP change, recalibration drift).</td>
+        <td>Separated from ISO 81060-2:2018. Governs future evaluation of exploratory cuffless PTT/PAT hypotheses.</td>
+      </tr>
+      <tr>
+        <td><strong>ISO 81060-2:2018</strong></td>
+        <td>Intermittent automated <strong>cuff-based</strong> sphygmomanometers (n &ge; 85 subjects, 255 paired readings, mean error &le; &plusmn;5 mmHg, SD &le; 8 mmHg).</td>
+        <td>Clarified that ISO 81060-2 applies to reference inflatable cuffs, NOT continuous optical cuffless PPG.</td>
+      </tr>
+      <tr>
+        <td><strong>CLSI EP17-A2 vs. EP09 / EP05</strong></td>
+        <td>EP17-A2 evaluates Limit of Blank (LoB), Limit of Detection (LoD), and Limit of Quantitation (LoQ) for lab assays.</td>
+        <td>Removed false pairing of EP17-A2 with Hb MAE &le; 0.85 g/dL and Bilirubin AUC &ge; 0.92; quantitative comparison requires CLSI EP09 &amp; EP05/EP15.</td>
+      </tr>
+      <tr>
+        <td><strong>AASM PSG / HSAT Guidelines</strong></td>
+        <td>Clinical OSA diagnosis and AHI scoring require multi-channel Polysomnography (PSG) or validated HSAT measuring airflow and SpO2.</td>
+        <td>Reframed 20 kHz smartphone acoustic sensing strictly as an exploratory chest-motion phase experiment, NOT clinical OSA/AHI diagnosis.</td>
+      </tr>
+      <tr>
+        <td><strong>TRIPOD+AI (BMJ 2024)</strong></td>
+        <td>Reporting guideline for clinical prediction models using regression or machine learning.</td>
+        <td>Adopted for subject-independent train/validation/test splitting, pre-test threshold freezing, and Risk–Coverage reporting.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Separation of Anthropic Support Programs &amp; Verified API Budget</h2>
+  <ul>
+    <li><strong>Program A — Claude Team Plan for Scientists:</strong> Workspace subscription for verified research groups led by an eligible PI/equivalent ($0/month Standard seat, $15/user/month Premium seat including Claude Code, up to 25 users for 12 months). Link: <code>https://support.claude.com/en/articles/11895862-claude-team-plan-for-scientists</code></li>
+    <li><strong>Program B — Anthropic AI for Science API Credits:</strong> Free API credits up to <strong>$20,000 USD for 6 months</strong> (reviewed on the first Monday of each month) on standard public API models (Claude Opus 4.1/4, Claude Sonnet 4.5/4, Claude Haiku 3.5). Link: <code>https://www.anthropic.com/ai-for-science</code></li>
+  </ul>
+
+  <p style="margin-top: 24px; font-size: 12px; color: #475569;">
+    Document Revision Date: 14 November 2026 | Full interactive audit matrix and JSON export available at <code>/source-audit-matrix-2026-11-14.json</code>.
+  </p>
+</body>
+</html>

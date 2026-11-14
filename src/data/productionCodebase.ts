@@ -425,6 +425,8 @@ class AnatomicalRoiTracker {
     },
     highlights: ['Natural Cubic Spline', 'POS Hanning OLA', 'NLMS IMU Filter', 'Zero-Phase filtfilt', '10 Biophysical Features'],
     code: `#include <jni.h>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 #include <cmath>
 #include <algorithm>
@@ -438,6 +440,28 @@ class AnatomicalRoiTracker {
 namespace biophysics {
 
 constexpr double PI = 3.14159265358979323846;
+
+// 64-Byte ARMv9 L1 Cache-Line Aligned Frame Packet (Audit Section 5.3)
+// Note: linearRgb[3] stores the SPATIAL MEAN of the segmented ROI (R_lin, G_lin, B_lin), NOT a full image frame.
+struct alignas(64) BiophysicalFramePacket {
+    int64_t  timestampNs;        // Offset 0  (8 bytes)
+    double   linearRgb[3];       // Offset 8  (24 bytes: ROI spatial mean R,G,B)
+    double   posPulseSample;     // Offset 32 (8 bytes)
+    double   sdppgSample;        // Offset 40 (8 bytes)
+    double   sqiScore;           // Offset 48 (8 bytes)
+    uint32_t focusPassFlag;      // Offset 56 (4 bytes)
+    uint32_t reservedPadding;    // Offset 60 (4 bytes)
+};
+
+static_assert(sizeof(BiophysicalFramePacket) == 64, "BiophysicalFramePacket must be exactly 64 bytes");
+static_assert(alignof(BiophysicalFramePacket) == 64, "BiophysicalFramePacket must be 64-byte aligned");
+static_assert(offsetof(BiophysicalFramePacket, timestampNs) == 0);
+static_assert(offsetof(BiophysicalFramePacket, linearRgb) == 8);
+static_assert(offsetof(BiophysicalFramePacket, posPulseSample) == 32);
+static_assert(offsetof(BiophysicalFramePacket, sdppgSample) == 40);
+static_assert(offsetof(BiophysicalFramePacket, sqiScore) == 48);
+static_assert(offsetof(BiophysicalFramePacket, focusPassFlag) == 56);
+static_assert(offsetof(BiophysicalFramePacket, reservedPadding) == 60);
 
 struct DspFeatures {
     double heartRateBpm;
@@ -495,7 +519,7 @@ std::vector<double> cubicSplineResample(
     return out;
 }
 
-// 2. Biquad IIR + Zero-Phase Forward-Backward filtfilt
+// 2. Biquad IIR + Non-Causal Zero-Phase Forward-Backward filtfilt (3.0s / 180-sample buffered window)
 struct Biquad {
     double b0, b1, b2, a1, a2;
     void process(std::vector<double>& x) const {
@@ -512,7 +536,7 @@ struct Biquad {
 
 void applyZeroPhaseFiltfilt(std::vector<double>& sig, const Biquad& sec1, const Biquad& sec2) {
     if (sig.size() < 16) return;
-    const size_t pad = 12;
+    const size_t pad = 12; // 3 * N_order reflection padding
     std::vector<double> ext;
     ext.reserve(sig.size() + 2 * pad);
     for (size_t i = pad; i > 0; --i) ext.push_back(2.0 * sig[0] - sig[i]);
@@ -655,10 +679,10 @@ double computeSpectralSqi(const std::vector<double>& sig, double fsHz, double& o
     filename: 'native_oboe_sonar_pcg.cpp',
     language: 'cpp',
     subtitle: {
-      en: 'Oboe C++17 Full-Duplex 20kHz CW Ultrasonic Sonar (I/Q Clutter Removal + Phase Unwrapping) & PCG Shannon Energy',
-      ar: 'مراقبة التنفس بالسونار فوق الصوتي 20kHz عبر Oboe C++ وفك التضمين I/Q وغلاف طاقة شانون لصوت القلب',
+      en: 'Oboe C++17 Full-Duplex 20kHz Near-Ultrasonic Acoustic Phase Experiment (I/Q Clutter Removal + Phase Unwrapping)',
+      ar: 'تجربة الطور الصوتي شبه فوق الصوتي 20kHz عبر Oboe C++ وفك التضمين I/Q وإزالة الانعكاسات الثابتة',
     },
-    highlights: ['oboe::InputPreset::Unprocessed', '64-bit Sample Counter', 'I/Q Clutter Removal', 'Shannon Energy PCG'],
+    highlights: ['oboe::InputPreset::Unprocessed', '64-bit Sample Counter', 'I/Q Clutter Removal', 'Exploratory Phase Model'],
     code: `#include <oboe/Oboe.h>
 #include <atomic>
 #include <cmath>
@@ -686,7 +710,7 @@ public:
 
         oboe::AudioStreamBuilder inBuilder;
         inBuilder.setDirection(oboe::Direction::Input)
-            ->setInputPreset(oboe::InputPreset::Unprocessed) // Bypass OS AGC / Noise Suppression
+            ->setInputPreset(oboe::InputPreset::Unprocessed) // Request raw mic path (verify OEM frequency response)
             ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
             ->setFormat(oboe::AudioFormat::Float)
             ->setChannelCount(1)
@@ -709,7 +733,7 @@ public:
         auto* out = static_cast<float*>(audioData);
         const double phaseStep = TWO_PI * carrierHz_ / static_cast<double>(sampleRate_);
 
-        // 1. Emit continuous phase-locked 20kHz ultrasonic sine carrier
+        // 1. Emit continuous phase-locked 20kHz near-ultrasonic sine carrier
         for (int32_t i = 0; i < numFrames; ++i) {
             uint64_t n = txSampleCounter_++;
             out[i] = static_cast<float>(0.22 * std::sin(phaseStep * n));
@@ -821,7 +845,7 @@ class OnDeviceMedicalAiEngine(private val context: Context) {
 
     /**
      * Runs 12-feature hybrid inference + Moens-Korteweg physics check.
-     * Strictly refuses clinical output if SQI < 0.65 (Uncertainty-Aware Safety Guard).
+     * Strictly abstains from output if SQI < 0.65 (Uncertainty-Aware Safety Guard).
      */
     fun inferHemodynamics(
         features12: FloatArray,
@@ -880,17 +904,18 @@ class OnDeviceMedicalAiEngine(private val context: Context) {
   },
   {
     id: 'sync-security',
-    filename: 'NtpClockSynchronizer.kt + KeystorePassphraseManager.kt',
+    filename: 'LocalFourTimestampClockOffsetEstimator.kt + KeystorePassphraseManager.kt',
     language: 'kotlin',
     subtitle: {
-      en: '4-Timestamp Wear OS NTP Sync + Android Hardware Keystore AES-256-GCM Wrapping for SQLCipher 4.6.1',
-      ar: 'مزامنة توقيت الساعة الذكية رباعية الطوابع وتغليف مفاتيح قاعدة SQLCipher داخل الشريحة الأمنية',
+      en: 'Local 4-Timestamp Bluetooth Clock-Offset Estimator (No Internet NTP) + Keystore KeyInfo Check for SQLCipher 4.6.1',
+      ar: 'مقدر انحراف الساعة المحلي بـ 4 طوابع زمنية عبر البلوتوث (بدون NTP شبكي) وتغليف مفاتيح SQLCipher',
     },
-    highlights: ['4-Timestamp NTP', 'Wear OS 100Hz PTT', 'AndroidKeyStore AES-GCM', 'SQLCipher 4.6.1'],
+    highlights: ['Local 4-Timestamp Offset', 'No Internet NTP', 'KeyInfo.isInsideSecurityHardware', 'SQLCipher AES-256 At-Rest'],
     code: `package org.biophysics.edge.security
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import java.security.KeyStore
@@ -898,9 +923,15 @@ import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 
-class NtpClockSynchronizer {
+/**
+ * Audit Section 5.5 Correction:
+ * Estimates clock offset between Wear OS watch and Android host purely via local Bluetooth
+ * GATT/L2CAP 4-timestamp round-trip packets (T1..T4) without any internet NTP server.
+ */
+class LocalFourTimestampClockOffsetEstimator {
     private var smoothedOffsetMs = 0.0
     private var initialized = false
 
@@ -923,9 +954,21 @@ class NtpClockSynchronizer {
         watchTsMs - smoothedOffsetMs.toLong()
 }
 
+/**
+ * Audit Section 5.6 Correction:
+ * Wraps the 256-bit SQLCipher database passphrase for at-rest SQLite encryption and explicitly
+ * queries KeyInfo.isInsideSecurityHardware (TEE / StrongBox) rather than assuming hardware backing.
+ */
 class KeystorePassphraseManager(private val context: Context) {
     private val keyAlias = "biophysics_sqlcipher_master_v1"
     private val prefs = context.getSharedPreferences("biophysics_vault_meta", Context.MODE_PRIVATE)
+
+    fun isMasterKeyHardwareBacked(): Boolean {
+        val secretKey = getOrCreateAesKey()
+        val factory = SecretKeyFactory.getInstance(secretKey.algorithm, "AndroidKeyStore")
+        val keyInfo = factory.getKeySpec(secretKey, KeyInfo::class.java) as KeyInfo
+        return keyInfo.isInsideSecurityHardware
+    }
 
     fun getOrCreateDatabasePassphrase(): ByteArray {
         val secretKey = getOrCreateAesKey()
@@ -939,7 +982,7 @@ class KeystorePassphraseManager(private val context: Context) {
             return cipher.doFinal(Base64.decode(encryptedB64, Base64.NO_WRAP))
         }
 
-        // Generate 256-bit cryptographically random SQLCipher passphrase
+        // Generate 256-bit cryptographically random SQLCipher passphrase for at-rest DB encryption
         val rawPassphrase = ByteArray(32).also { SecureRandom().nextBytes(it) }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, secretKey)

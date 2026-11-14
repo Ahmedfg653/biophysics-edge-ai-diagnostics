@@ -1,0 +1,61 @@
+{
+  "auditDate": "2026-11-14",
+  "backupDirectory": "/backup_pre_audit_2026_11_14",
+  "revisedProjectTitle": {
+    "en": "Uncertainty-Aware Abstention for Smartphone-Based Remote PPG Under Motion and Illumination Variations: A Quality-Gated Research Prototype, Signal Reliability, Selective Prediction, and On-Device Processing Architecture",
+    "ar": "الامتناع الواعي بعدم اليقين لتقدير النبض البصري عن بُعد (rPPG) عبر الهاتف الذكي تحت تغيرات الحركة والإضاءة: نموذج بحثي أولي محكوم بجودة الإشارة، التنبؤ الانتقائي، ومعمارية المعالجة المحلية"
+  },
+  "medicalDisclaimer": {
+    "en": "RESEARCH PROTOTYPE ONLY — NOT FOR MEDICAL DIAGNOSIS OR TREATMENT DECISIONS. Clinical validation has not yet been conducted.",
+    "ar": "نموذج بحثي أولي فقط — غير مخصص للتشخيص الطبي أو اتخاذ القرارات العلاجية. لم يُجرَ أي تحقق سريري على البشر حتى الآن."
+  },
+  "evidenceClassificationCounts": {
+    "IMPLEMENTED": 4,
+    "SIMULATED": 4,
+    "PROPOSED": 4,
+    "BENCHMARKED": 0,
+    "CLINICALLY_VALIDATED": 0
+  },
+  "sourceFilesAudited": [
+    "index.html",
+    "metadata.json",
+    "src/App.tsx",
+    "src/utils/biophysicsMath.ts",
+    "src/utils/biophysicsMath.test.ts",
+    "src/data/bilingualContent.ts",
+    "src/data/monographAdditiveExpansion.ts",
+    "src/data/productionCodebase.ts",
+    "src/data/scientificAuditData.ts",
+    "src/components/HeroGrantPitch.tsx",
+    "src/components/EvidenceAuditSection.tsx",
+    "src/components/HumanitarianCrisisSection.tsx",
+    "src/components/LiveSimulatorsLab.tsx",
+    "src/components/ClinicalProtocolSection.tsx",
+    "src/components/HardwareAuditSection.tsx",
+    "src/components/BinaryMemoryArchitectureSection.tsx",
+    "src/components/BenchmarkComparisonsSection.tsx",
+    "src/components/AnatomicalOrganAtlasSection.tsx",
+    "src/components/FutureBiomarkersHorizonSection.tsx",
+    "src/components/AnthropicJustification.tsx",
+    "src/components/GrantApplicationPackage.tsx",
+    "src/components/InstitutionalSupervisionSection.tsx",
+    "src/components/OpenSciencePublicGoodsSection.tsx",
+    "src/components/ExecutionWorkflowSection.tsx",
+    "src/components/CodeExplorerSection.tsx",
+    "src/components/EngineeringFaqSection.tsx"
+  ],
+  "keyCorrectionsApplied": [
+    "Scoped V1 contribution to Quality-Gated Smartphone rPPG, HR estimation, signal quality evaluation, and Selective Abstention.",
+    "Added permanent 'SIMULATED DATA — NOT A CLINICAL MEASUREMENT' badges and mathematical synthetic generator equations above all 4 interactive simulators.",
+    "Replaced 'CLSI EP17-A2' pairing with Hb MAE / Bilirubin AUC; documented CLSI EP17-A2 (LoB/LoD/LoQ) vs. CLSI EP09 (method comparison) and CLSI EP05/EP15 (precision).",
+    "Separated IEEE Std 1708-2025 (wearable cuffless BP) from ISO 81060-2:2018 (intermittent automated cuff sphygmomanometers) and distinguished PTT from PAT (PEP).",
+    "Removed Clarke Error Grid from PCG + Wear OS evaluation (Clarke Error Grid is exclusively for blood glucose).",
+    "Reframed 20 kHz acoustic sensing as an exploratory chest-motion phase experiment and cited AASM PSG/HSAT guidelines for clinical OSA/AHI.",
+    "Removed HbA1c from V1 capabilities into Exploratory Future Hypotheses.",
+    "Defined exact SQI spectral bandwidth (f0 ± 0.15 Hz, 2f0 ± 0.15 Hz on 3.0s Hanning window) and Laplacian focus ROI (8-bit [0..255] grayscale 128x128 patch) and labeled 0.65 and 110.0 as heuristic baseline thresholds requiring validation-split tuning.",
+    "Removed live global mortality ticker and 'Lives Saved' framing; replaced with documented Epidemiological Provenance Table and non-additive Theoretical Target Screening Reach.",
+    "Separated MIMIC-IV v3.1 EHR from MIMIC-IV Waveform v0.1.0, clarified neither contains facial video (PURE and UBFC-rPPG do), and marked FA-HISTS dataset as a planned protocol requiring IRB approval.",
+    "Added static_assert(alignof(BiophysicalFramePacket) == 64), offsetof checks, non-causal filtfilt buffering notes, and renamed NtpClockSynchronizer to LocalFourTimestampClockOffsetEstimator.",
+    "Separated Claude Team Plan for Scientists ($0 Standard / $15 Premium up to 25 seats for 12m) from Anthropic AI for Science API Credits (up to $20,000 for 6m) and replaced unreleased model names in the budget calculator with verified public API pricing."
+  ]
+}

@@ -273,14 +273,14 @@ export const FUTURE_PREDICTIVE_BIOMARKERS_6: FuturePredictiveBiomarker[] = [
       ar: 'يرفع خطر الجلطة الدماغية 5 أضعاف بلا أعراض مسبقة',
     },
     sensorsFused: '60fps POS rPPG + Fingertip PPG + 48kHz Acoustic PCG (Absent S4 / Irregular S1)',
-    claudeModelRole: 'Claude Opus 5.5 (Non-Linear Stochastic Dynamics)',
+    claudeModelRole: 'Claude Opus 4.1 (Non-Linear Stochastic Dynamics Hypothesis Analysis)',
     biophysicalDiscoveryMechanism: {
       en: 'Distinguishes chaotic atrial fibrillation from benign premature contractions (PACs/PVCs) and respiratory sinus arrhythmia by combining Lorenz Poincaré plot geometry (SD1/SD2 ellipse ratio), Sample Entropy (SampEn), Shannon Entropy of inter-beat intervals, and pulse-amplitude variability caused by variable ventricular filling times.',
       ar: 'التفريق الدقيق بين الرجفان الأذيني الفوضوي وبين خوارج الانقباض الحميدة عبر هندسة مخطط بوانكاريه (Poincaré Plot SD1/SD2)، وإنتروبيا العينة (Sample Entropy)، وإنتروبيا شانون لتوزيع الفواصل الزمنية للنبض مع تباين سعة النبضة الناتج عن اختلاف زمن امتلاء البطين.',
     },
     claudeComputationalContribution: {
-      en: 'Claude Opus 5.5 derives optimal multi-scale entropy thresholds on MIT-BIH Atrial Fibrillation and MIMIC-IV datasets to minimize false-positive anxiety while preserving >97% sensitivity.',
-      ar: 'يشتق Claude Opus 5.5 الحدود الإحصائية المثلى للإنتروبيا غير الخطية عبر قواعد بيانات MIT-BIH وMIMIC-IV لمنع الإنذارات الكاذبة مع تحقيق حساسية تتجاوز 97%.',
+      en: 'Conceptual Future Role: Claude Opus 4.1 assists in formulating multi-scale entropy hypotheses for future retrospective testing on MIT-BIH Atrial Fibrillation and MIMIC-IV datasets.',
+      ar: 'دور بحثي مستقبلي مقترح: يساعد Claude Opus 4.1 في صياغة فرضيات الإنتروبيا متعددة المقاييس لاختبارها استرجاعياً مستقبلاً على قواعد بيانات MIT-BIH وMIMIC-IV.',
     },
     mathematicalSignatureLatex: String.raw`\text{SampEn}(m, r, N) = -\ln\!\left(\frac{A^m(r)}{B^m(r)}\right), \qquad \frac{\text{SD}_1}{\text{SD}_2} > 0.65`,
   },
@@ -292,18 +292,18 @@ export const FUTURE_PREDICTIVE_BIOMARKERS_6: FuturePredictiveBiomarker[] = [
       ar: '02. التنبؤ المبكر بمرض باركنسون والرعاش العصبي (Prodromal Parkinson’s)',
     },
     clinicalUrgencyBadge: {
-      en: 'Detects Dopaminergic Motor & Vocal Drift Years Before Rigidity',
-      ar: 'رصد التغيرات الحركية والصوتية الدقيقة قبل سنوات من التدهور الحركي',
+      en: 'Conceptual Literature Hypothesis · Requires Dedicated Clinical Study',
+      ar: 'فرضية أدبية مستقبلية · تتطلب دراسة سريرية مستقلة',
     },
     sensorsFused: '200Hz 6-Axis IMU (Gyroscope + Accelerometer) + 48kHz Unprocessed Vocal Mic',
-    claudeModelRole: 'Claude Opus 5.5 + Claude Code (Cross-Modal Spectral Fusion)',
+    claudeModelRole: 'Claude Opus 4.1 + Claude Code (Cross-Modal Spectral Hypothesis)',
     biophysicalDiscoveryMechanism: {
       en: 'Fuses high-resolution 200Hz IMU micro-kinematics while holding the phone with 48kHz sustained-phonation acoustic features (Vocal Jitter, Shimmer, Harmonic-to-Noise Ratio HNR, and Fundamental Frequency F0 micro-tremor) to separate Parkinsonian resting/postural tremor (4–6 Hz pill-rolling band) from benign essential tremor (6–12 Hz).',
       ar: 'دمج قراءات الجيروسكوب والتسارع عالية التردد (200Hz IMU) أثناء إمساك الهاتف مع التذبذبات الدقيقة في الأحبال الصوتية (Vocal Jitter, Shimmer, HNR & F0 Tremor عبر ميكروفون 48kHz) لعزل طيف رعاش باركنسون المميز (4–6 Hz) عن الرعاش الأساسي الحميد (6–12 Hz).',
     },
     claudeComputationalContribution: {
-      en: 'Claude Code vectorizes Welch’s power spectral density (PSD) and cepstral vocal extractors in ARMv9 NEON C++17 for instantaneous 10-second neuromotor screening.',
-      ar: 'يقوم Claude Code بتسريع خوارزميات الكثافة الطيفية (Welch PSD) واستخلاص المعاملات الصوتية بلغة C++17 NEON لإجراء فحص عصبي حركي شامل في 10 ثوانٍ.',
+      en: 'Conceptual Future Role: Claude Code assists in prototyping Welch’s power spectral density (PSD) C++17 extractors for future exploratory evaluation.',
+      ar: 'دور بحثي مستقبلي مقترح: يساعد Claude Code في بناء نماذج أولية لخوارزميات الكثافة الطيفية (Welch PSD) بلغة C++17 للتقييم الاستكشافي مستقبلاً.',
     },
     mathematicalSignatureLatex: String.raw`R_{\text{PD}} = \frac{\int_{4\text{Hz}}^{6\text{Hz}} S_{\text{IMU}}(f)\,df}{\int_{6\text{Hz}}^{12\text{Hz}} S_{\text{IMU}}(f)\,df}, \qquad \text{Jitter}_{\text{loc}} = \frac{\frac{1}{N-1}\sum |T_i - T_{i+1}|}{\frac{1}{N}\sum T_i}`,
   },
@@ -315,18 +315,18 @@ export const FUTURE_PREDICTIVE_BIOMARKERS_6: FuturePredictiveBiomarker[] = [
       ar: '03. الفشل القلبي الاحتقاني والوذمة الرئوية المبكرة (Early CHF Decompensation)',
     },
     clinicalUrgencyBadge: {
-      en: 'Alerts 5–7 Days Before Acute Pulmonary Edema Hospitalization',
-      ar: 'إنذار مبكر قبل 5–7 أيام من احتقان الرئة الحاد ودخول العناية المركزة',
+      en: 'Conceptual Literature Hypothesis · Requires Dedicated Clinical Study',
+      ar: 'فرضية أدبية مستقبلية · تتطلب دراسة سريرية مستقلة',
     },
     sensorsFused: '48kHz Unprocessed Chest PCG + Basal Lung Auscultation + Vocal Tract Resonance',
-    claudeModelRole: 'Claude Sonnet 5.5 (1M-Context Time-Frequency Wavelet Design)',
+    claudeModelRole: 'Claude Sonnet 4.5 (Time-Frequency Wavelet Filterbank Design)',
     biophysicalDiscoveryMechanism: {
       en: 'Detects elevated left-ventricular filling pressure by isolating the low-frequency pathological third heart sound (S3 Ventricular Gallop at 20–70 Hz in early diastole), basal pulmonary fine inspiratory crackles (200–600 Hz transient pops), and subtle vocal-cord subglottic edema formant shifts.',
       ar: 'يكتشف ارتفاع ضغط امتلاء البطين الأيسر واحتباس السوائل الرئوي عبر رصد ظهور الصوت القلبي الثالث المرضي (S3 Ventricular Gallop عند 20–70 Hz)، والخرخرة الرئوية القاعدية الدقيقة (Fine Inspiratory Crackles)، وتغيرات الرنين الصوتي الناتجة عن الوذمة تحت المزمار.',
     },
     claudeComputationalContribution: {
-      en: 'Claude Sonnet 5.5 analyzes thousands of PhysioNet heart/lung recordings in its 1M context window to design continuous wavelet transform (Morlet CWT) filterbanks isolating S3 gallop from thoracic noise.',
-      ar: 'يحلل Claude Sonnet 5.5 آلاف التسجيلات القلبية والرئوية عبر نافذة المليون توكن لتصميم مرشحات المويجات المستمرة (Morlet CWT) التي تعزل صوت S3 المرضي بدقة.',
+      en: 'Conceptual Future Role: Claude Sonnet 4.5 assists in designing continuous wavelet transform (Morlet CWT) filterbank prototypes for future acoustic studies.',
+      ar: 'دور بحثي مستقبلي مقترح: يساعد Claude Sonnet 4.5 في تصميم نماذج مرشحات المويجات المستمرة (Morlet CWT) للدراسات الصوتية المستقبلية.',
     },
     mathematicalSignatureLatex: String.raw`W_{\psi}(a, \tau) = \frac{1}{\sqrt{a}}\int_{-\infty}^{\infty} x_{\text{PCG}}(t)\,\psi^*\!\left(\frac{t-\tau}{a}\right)dt \quad (f_{S3} \in [20, 70]\,\text{Hz})`,
   },
@@ -338,18 +338,18 @@ export const FUTURE_PREDICTIVE_BIOMARKERS_6: FuturePredictiveBiomarker[] = [
       ar: '04. قصور الكلى المزمن وتكلس الشرايين وسمية البولينا (Chronic Kidney Disease)',
     },
     clinicalUrgencyBadge: {
-      en: 'Targets Silent Stage 3–4 CKD Before Dialysis Dependency',
-      ar: 'كشف القصور الكلوي الصامت في مراحله المبكرة قبل الفشل الكلوي والغسيل',
+      en: 'Conceptual Literature Hypothesis · Requires Dedicated Clinical Study',
+      ar: 'فرضية أدبية مستقبلية · تتطلب دراسة سريرية مستقلة',
     },
     sensorsFused: 'Rear 50MP OIS CIE L*a*b* + Multi-Harmonic SDPPG Vascular Calcification Index',
-    claudeModelRole: 'Claude Opus 5.5 (Multi-Organ Biophysical Coupling)',
+    claudeModelRole: 'Claude Opus 4.1 (Multi-Variable Hypothesis Formulation)',
     biophysicalDiscoveryMechanism: {
       en: 'Combines medial arterial calcification signatures (extreme PWV elevation + radial Augmentation Index AIx) with a dual colorimetric signature in Bradford D65 CIE L*a*b*: erythropoietin-deficiency conjunctival pallor (↓ a*/L*) coupled with epidermal/scleral urochrome retention yellowness-brownish shift (↑ b* with ↓ L*).',
       ar: 'يدمج بين بصمة تكلس الشرايين المبكر الناتج عن اضطراب الكالسيوم والفوسفور (ارتفاع حاد في PWV ومعامل الزيادة AIx) وبين البصمة اللونية المزدوجة في فضاء CIE L*a*b*: شحوب نقص هرمون الإريثروبويتين الكلوي بالملتحمة مع اصفرار الجلد والصلبة نتيجة احتباس صبغات اليوروكروم البولية.',
     },
     claudeComputationalContribution: {
-      en: 'Claude Opus 5.5 formulates the Bayesian decision boundary separating hepatic jaundice (isolated scleral +b*) from uremic CKD (combined arterial calcification + anemia pallor + urochrome shift).',
-      ar: 'يصوغ Claude Opus 5.5 المصنف البايزي الذي يفصل رياضياً بين اليرقان الكبدي وبين قصور الكلى المزمن متعدد المؤشرات.',
+      en: 'Conceptual Future Role: Claude Opus 4.1 formulates theoretical Bayesian decision boundaries for future clinical validation against serum creatinine/eGFR.',
+      ar: 'دور بحثي مستقبلي مقترح: يصوغ Claude Opus 4.1 حدود القرار البايزية النظرية للتحقق السريري المستقبلي مقابل تحاليل وظائف الكلى.',
     },
     mathematicalSignatureLatex: String.raw`\text{AIx} = \frac{\Delta P_{\text{aug}}}{\text{PP}} \times 100\%, \qquad \mathcal{I}_{\text{CKD}} = \Phi\!\left(\text{PWV},\; \text{AIx},\; \downarrow\frac{a^*}{L^*},\; \uparrow b^*_{\text{uro}}\right)`,
   },
@@ -361,18 +361,18 @@ export const FUTURE_PREDICTIVE_BIOMARKERS_6: FuturePredictiveBiomarker[] = [
       ar: '05. الارتجاج الدماغي وإصابات الرأس والزهايمر المبكر (Quantitative Pupillometry)',
     },
     clinicalUrgencyBadge: {
-      en: 'Millisecond Cranial Nerve II & III Autonomic Reflex Audit',
-      ar: 'فحص كمي دقيق لمنعكس الحدقة وحركات العين السريعة بالملي ثانية',
+      en: 'Conceptual Literature Hypothesis · Requires Dedicated Clinical Study',
+      ar: 'فرضية أدبية مستقبلية · تتطلب دراسة سريرية مستقلة',
     },
     sensorsFused: '60fps Camera2 + Controlled Flash Pulse + MediaPipe 478 Iris Contour Tracking',
-    claudeModelRole: 'Claude Code + Claude Opus 5.5 (Sub-Pixel Kalman Tracking)',
+    claudeModelRole: 'Claude Code + Claude Opus 4.1 (Sub-Pixel Kalman Tracking Hypothesis)',
     biophysicalDiscoveryMechanism: {
       en: 'Uses a calibrated brief LED flash pulse while tracking iris/pupil boundary landmarks at 60fps (16.6 ms resolution) to quantify Pupillary Light Reflex (PLR) dynamics: constriction latency (ms), maximum constriction velocity (mm/s), and 75% redilation time (T75), alongside horizontal micro-saccadic eye movement dysmetria.',
       ar: 'يوجه نبضة ضوئية قصيرة ومعايرة مع تتبع حدود القزحية والحدقة بسرعة 60fps لقياس حركية منعكس الحدقة للضوء (زمن الكمون بالملي ثانية، السرعة القصوى للانقباض mm/s، وزمن استعادة التوسع) مع رصد اختلال الحركات الرمشية السريعة للعين (Micro-Saccades).',
     },
     claudeComputationalContribution: {
-      en: 'Claude Code generates a sub-pixel Savitzky-Golay + Kalman iris-diameter estimator immune to corneal specular reflection.',
-      ar: 'يبني Claude Code مرشح كالمان لتقدير قطر الحدقة بدقة أجزاء البكسل مع عزل الانعكاس الضوئي عن القرنية.',
+      en: 'Conceptual Future Role: Claude Code generates Savitzky-Golay + Kalman iris-diameter estimation code for future hardware-in-the-loop testing.',
+      ar: 'دور بحثي مستقبلي مقترح: يولد Claude Code كود مرشح كالمان لتقدير قطر الحدقة لاختباره مستقبلاً.',
     },
     mathematicalSignatureLatex: String.raw`V_{\max} = \max_{t}\left|\frac{dD_{\text{pupil}}(t)}{dt}\right|, \qquad \tau_{\text{latency}} = t_{\text{onset}} - t_{\text{flash}}`,
   },
@@ -384,18 +384,18 @@ export const FUTURE_PREDICTIVE_BIOMARKERS_6: FuturePredictiveBiomarker[] = [
       ar: '06. الكشف المبكر عن تسمم الحمل لدى السيدات الحوامل (Early Preeclampsia)',
     },
     clinicalUrgencyBadge: {
-      en: 'Protects Pregnant Mothers & Fetuses in Rural Clinics Before Eclampsia Seizures',
-      ar: 'إنقاذ حياة الأمهات والأجنة في القرى المحرومة قبل حدوث تشنجات تسمم الحمل',
+      en: 'Conceptual Literature Hypothesis · Requires Dedicated Clinical Study',
+      ar: 'فرضية أدبية مستقبلية · تتطلب دراسة سريرية مستقلة',
     },
     sensorsFused: 'Facial + Fingertip Zero-Phase SDPPG + Maternal Autonomic HRV + Ocular Edema ROI',
-    claudeModelRole: 'Claude Sonnet 5.5 + Claude Fable 5.2 (Maternal Longitudinal Baseline)',
+    claudeModelRole: 'Claude Sonnet 4.5 (Maternal Longitudinal Trajectory Modeling)',
     biophysicalDiscoveryMechanism: {
       en: 'Detects maternal systemic endothelial dysfunction and vasospasm weeks before clinical crisis by tracking longitudinal surges in Total Peripheral Resistance (TPR reflected in elevated dicrotic notch height and SDPPG d/a ratio), loss of normal mid-pregnancy blood pressure dip, and periorbital micro-edema.',
       ar: 'يرصد الخلل البطاني الوعائي والتشنج الشرياني لدى الأم الحامل قبل أسابيع من الأزمة عبر تتبع الارتفاع المتسارع في المقاومة الوعائية الطرفية (Total Peripheral Resistance من شكل الثلمة الثنائية ونسبة d/a في المشتقة الثانية) وغياب الانخفاض الفسيولوجي الطبيعي للضغط في منتصف الحمل.',
     },
     claudeComputationalContribution: {
-      en: 'Claude Sonnet 5.5 models gestational-week-adjusted hemodynamic trajectories so rural midwives receive clear, zero-internet early referral alerts.',
-      ar: 'يصمم Claude Sonnet 5.5 منحنيات المعايرة حسب أسبوع الحمل لتنبيه القابلات والأمهات مبكراً بدون إنترنت.',
+      en: 'Conceptual Future Role: Claude Sonnet 4.5 models gestational-week-adjusted hemodynamic hypothesis curves for future obstetric research protocols.',
+      ar: 'دور بحثي مستقبلي مقترح: يصمم Claude Sonnet 4.5 منحنيات الفرضيات الهيموديناميكية حسب أسبوع الحمل لبروتوكولات البحث المستقبلية.',
     },
     mathematicalSignatureLatex: String.raw`\text{TPR}_{\text{idx}} = \frac{\text{MAP}}{\text{CO}_{\text{est}}} \propto \frac{h_{\text{notch}}}{h_{\text{sys}}} - \frac{d}{a}_{\text{SDPPG}}`,
   },
@@ -418,8 +418,8 @@ export const BINARY_MEMORY_LAYOUT_FIELDS: BinaryStructField[] = [
     fieldName: 'sensorTimestampNs',
     alignmentNote: '8-byte aligned (Offset 0x00)',
     description: {
-      en: 'Monotonic hardware SENSOR_TIMESTAMP in nanoseconds (synced with Oboe audio frame & NTP Wear OS offset).',
-      ar: 'الطابع الزمني العتادي بالنانوثانية (متزامن مع إطار الصوت Oboe وفارق توقيت الساعة الذكية NTP).',
+      en: 'Monotonic hardware SENSOR_TIMESTAMP in nanoseconds (synced with Oboe audio frame & local 4-timestamp clock offset).',
+      ar: 'الطابع الزمني العتادي بالنانوثانية (متزامن مع إطار الصوت Oboe ومقدر فارق التوقيت المحلي رباعي الطوابع).',
     },
   },
   {
@@ -429,8 +429,8 @@ export const BINARY_MEMORY_LAYOUT_FIELDS: BinaryStructField[] = [
     fieldName: 'linearRgb[3]',
     alignmentNote: '3 × 8B IEEE-754 float64 (Offset 0x08)',
     description: {
-      en: 'Inverse-gamma linearized spatial ROI means (R_lin, G_lin, B_lin) ready for zero-loss POS matrix projection.',
-      ar: 'متوسطات القنوات الضوئية الثلاث (R_lin, G_lin, B_lin) بدقة 64-bit بعد فك جاما العكسي.',
+      en: 'Spatial mean across the tracked forehead/cheek ROI (computed prior to SPSC ring buffer insertion) of inverse-gamma linearized channels (R_lin, G_lin, B_lin).',
+      ar: 'المتوسط المكاني لمنطقة الاهتمام بالوجه (Forehead/Malar ROI Spatial Mean) للقنوات الضوئية الثلاث (R_lin, G_lin, B_lin) بدقة 64-bit بعد فك جاما العكسي.',
     },
   },
   {
@@ -462,8 +462,8 @@ export const BINARY_MEMORY_LAYOUT_FIELDS: BinaryStructField[] = [
     fieldName: 'wearablePpgSample',
     alignmentNote: '4B float32 (Offset 0x34)',
     description: {
-      en: '4-Timestamp NTP clock-aligned 100Hz wrist PPG sample from Wear OS (or acoustic PCG S1 envelope).',
-      ar: 'عينة نبض المعصم المتزامنة عبر بروتوكول NTP رباعي الطوابع لحساب زمن انتقال النبض PTT.',
+      en: 'Local 4-timestamp clock-aligned 100Hz wrist PPG sample from Wear OS (or acoustic PCG S1 envelope).',
+      ar: 'عينة نبض المعصم المتزامنة عبر مقدر فارق التوقيت المحلي رباعي الطوابع لحساب زمن انتقال النبض PTT.',
     },
   },
   {
@@ -484,8 +484,8 @@ export const BINARY_MEMORY_LAYOUT_FIELDS: BinaryStructField[] = [
     fieldName: 'frameSqiScore',
     alignmentNote: '4B float32 (Offset 0x3C · Total = 64B)',
     description: {
-      en: 'Instantaneous pre-neural Signal Quality Index (0.0–1.0); triggers Safe Abstention if < 0.65.',
-      ar: 'مؤشر جودة الإطار الفوري (0.0–1.0)؛ يفعل بوابة الامتناع السريري الآمن إذا انخفض عن 0.65.',
+      en: 'Instantaneous pre-neural Signal Quality Index (0.0–1.0); triggers Safe Abstention if < 0.65 (candidate threshold).',
+      ar: 'مؤشر جودة الإطار الفوري (0.0–1.0)؛ يفعل بوابة الامتناع السريري الآمن إذا انخفض عن العتبة المرشحة 0.65.',
     },
   },
 ];
@@ -502,10 +502,10 @@ export const CPP_64BYTE_STRUCT_AND_RINGBUFFER_SNIPPET = `// ====================
 
 struct alignas(64) BiophysicalFramePacket {
     uint64_t sensorTimestampNs;   // Bytes [00..07]: Monotonic hardware timestamp (ns)
-    double   linearRgb[3];        // Bytes [08..31]: Linearized R_lin, G_lin, B_lin
+    double   linearRgb[3];        // Bytes [08..31]: ROI Spatial Mean (R_lin, G_lin, B_lin)
     float    imuAccelG[3];        // Bytes [32..43]: 200Hz IMU (ax, ay, az) for NLMS
     float    sonarIqPhasor[2];    // Bytes [44..51]: 20kHz Ultrasonic I_dyn(t), Q_dyn(t)
-    float    wearablePpgSample;   // Bytes [52..55]: NTP-synced wrist PPG / PCG sample
+    float    wearablePpgSample;   // Bytes [52..55]: Clock-aligned wrist PPG / PCG sample
     uint16_t flickerHz;           // Bytes [56..57]: 50Hz / 60Hz scene flicker
     uint16_t aeAwbLockFlags;      // Bytes [58..59]: Bitmask: AE_LOCKED | AWB_LOCKED
     float    frameSqiScore;       // Bytes [60..63]: Real-time SQI gate (Abstain < 0.65)
@@ -515,6 +515,14 @@ static_assert(sizeof(BiophysicalFramePacket) == 64,
               "BiophysicalFramePacket must match 64-byte Cortex-X925 L1 cache line");
 static_assert(alignof(BiophysicalFramePacket) == 64,
               "Strict 64-byte alignment required to prevent split-cache-line loads");
+static_assert(offsetof(BiophysicalFramePacket, sensorTimestampNs) == 0, "Offset 0x00");
+static_assert(offsetof(BiophysicalFramePacket, linearRgb) == 8, "Offset 0x08");
+static_assert(offsetof(BiophysicalFramePacket, imuAccelG) == 32, "Offset 0x20");
+static_assert(offsetof(BiophysicalFramePacket, sonarIqPhasor) == 44, "Offset 0x2C");
+static_assert(offsetof(BiophysicalFramePacket, wearablePpgSample) == 52, "Offset 0x34");
+static_assert(offsetof(BiophysicalFramePacket, flickerHz) == 56, "Offset 0x38");
+static_assert(offsetof(BiophysicalFramePacket, aeAwbLockFlags) == 58, "Offset 0x3A");
+static_assert(offsetof(BiophysicalFramePacket, frameSqiScore) == 60, "Offset 0x3C");
 
 template <typename T, size_t CapacityPow2>
 class LockFreeSpscRingBuffer {

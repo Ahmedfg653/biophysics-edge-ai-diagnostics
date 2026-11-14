@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroGrantPitch } from './components/HeroGrantPitch';
+import { EvidenceAuditSection } from './components/EvidenceAuditSection';
 import { AnthropicJustification } from './components/AnthropicJustification';
 import { HardwareAuditSection } from './components/HardwareAuditSection';
 import { LiveSimulatorsLab } from './components/LiveSimulatorsLab';
@@ -32,45 +33,70 @@ export default function App() {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   }, [lang]);
 
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0F172A]" data-lang={lang}>
-      <Navbar lang={lang} />
+    <div id="top" className="min-h-screen overflow-x-clip bg-white text-[#0F172A]" data-lang={lang}>
+      <Navbar lang={lang} onToggleLanguage={setLang} />
       <main>
-        <HeroGrantPitch lang={lang} onToggleLanguage={setLang} />
-        <HumanitarianCrisisSection lang={lang} />
-        <AnatomicalOrganAtlasSection lang={lang} />
+        <HeroGrantPitch
+          lang={lang}
+          onJumpToSimulators={() => scrollToSection('simulators')}
+          onJumpToGrantPackage={() => scrollToSection('anthropic')}
+        />
+        <EvidenceAuditSection lang={lang} />
+        <LiveSimulatorsLab lang={lang} />
+        <ClinicalProtocolSection lang={lang} />
+        <BinaryMemoryArchitectureSection lang={lang} />
+        <HardwareAuditSection lang={lang} />
+        <BenchmarkComparisonsSection lang={lang} />
+        <AnthropicJustification lang={lang} />
         <InstitutionalSupervisionSection lang={lang} />
         <OpenSciencePublicGoodsSection lang={lang} />
-        <AnthropicJustification lang={lang} />
+        <HumanitarianCrisisSection lang={lang} />
+        <AnatomicalOrganAtlasSection lang={lang} />
         <FutureBiomarkersHorizonSection lang={lang} />
-        <HardwareAuditSection lang={lang} />
-        <BinaryMemoryArchitectureSection lang={lang} />
-        <LiveSimulatorsLab lang={lang} />
         <MathEncyclopedia lang={lang} />
         <VulnerabilitiesMatrix lang={lang} />
-        <BenchmarkComparisonsSection lang={lang} />
         <CodebaseExplorer lang={lang} />
-        <ClinicalProtocolSection lang={lang} />
         <ExecutionWorkflowSection lang={lang} />
         <GrantApplicationPackage lang={lang} />
       </main>
       <footer className="border-t border-slate-200 bg-[#F8FAFC] py-8 text-xs text-slate-600">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
+            <p className="text-amber-900 font-mono font-bold uppercase">
+              {lang === 'en'
+                ? 'RESEARCH PROTOTYPE ONLY — NOT FOR MEDICAL DIAGNOSIS OR TREATMENT DECISIONS · Clinical validation has not yet been conducted (0 clinically validated claims).'
+                : 'نموذج بحثي أولي فقط — غير مخصص للتشخيص الطبي أو اتخاذ القرارات العلاجية · لم يُجرَ أي تحقق سريري على البشر حتى الآن.'}
+            </p>
             <p className="text-[#0F172A] font-bold">
               {lang === 'en'
-                ? 'Principal Investigator: Ahmed Elshal · Faculty Supervisors (Co-PIs): Dr. Hayam Abd El-Mardy & Dr. Osama Helmy'
-                : 'الباحث الرئيسي: أحمد الشال · الإشراف الأكاديمي والعلمي: د. هيام عبد المرضي و د. أسامة حلمي'}
+                ? 'Lead Student Researcher & Prototype Developer: Ahmed Elshal (ORCID: 0009-0009-2697-1139) · Academic Advisors / Faculty Mentors: Dr. Hayam Abd El-Mardy & Dr. Osama Helmy'
+                : 'الباحث الطلابي الرئيسي ومطور النموذج: أحمد الشال (ORCID: 0009-0009-2697-1139) · الإشراف الأكاديمي والتوجيه العلمي: د. هيام عبد المرضي و د. أسامة حلمي'}
             </p>
             <p>
               {lang === 'en'
-                ? 'Computer Science Dept., Higher Future Institute for Specialized Technological Studies (Future Academy / FA-HISTS, Cairo) · MOHE License No. 1471 · Supreme Council Decree No. 359'
-                : 'قسم علوم الحاسب، معهد المستقبل العالي للدراسات التكنولوجية المتخصصة (أكاديمية المستقبل FA-HISTS) · ترخيص وزارة التعليم العالي رقم 1471 · قرار المجلس الأعلى للجامعات رقم 359'}
+                ? 'Computer Science Dept., Higher Future Institute for Specialized Technological Studies (Future Academy / FA-HISTS, Cairo, Egypt) · Dell EMC & Huawei ICT Academy are institutional curriculum memberships, not project sponsors.'
+                : 'قسم علوم الحاسب، معهد المستقبل العالي للدراسات التكنولوجية المتخصصة (أكاديمية المستقبل FA-HISTS، القاهرة) · عضوية Dell EMC وHuawei ICT هي شراكات مناهج تدريبية للمعهد وليست جهات راعية للمشروع.'}
             </p>
           </div>
-          <p dir="ltr" className="font-mono font-semibold text-[#059669] shrink-0">
-            Apache-2.0 Open-Science Public Goods · 100% On-Device Zero-Cloud Architecture
-          </p>
+          <div className="flex flex-col items-start lg:items-end gap-1 shrink-0">
+            <p dir="ltr" className="font-mono font-semibold text-blue-900">
+              Apache-2.0 Open-Science Reference Code · On-Device Processing in Tested Workflows
+            </p>
+            <div className="flex items-center gap-3 font-mono text-[11px]">
+              <a href="/research-brief-2026-11-14.html" target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">
+                Printable Research Brief (HTML/PDF)
+              </a>
+              <span>·</span>
+              <a href="/source-audit-matrix-2026-11-14.json" target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">
+                Source Audit Matrix (JSON)
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

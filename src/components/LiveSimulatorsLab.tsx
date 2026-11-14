@@ -1,783 +1,776 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  computeEyeLabCalibration,
-  computeHemodynamicEstimate,
+  Activity,
+  Radio,
+  HeartPulse,
+  Eye,
+  AlertTriangle,
+  ShieldAlert,
+  CheckCircle2,
+  Sliders,
+  Info,
+} from 'lucide-react';
+import {
+  Language,
   simulatePosRppgWindow,
   simulateUltrasonicSonar,
-  type Language,
-  type SonarBreathingMode,
+  computeHemodynamicEstimate,
+  computeEyeLabCalibration,
+  SonarBreathingMode,
 } from '../utils/biophysicsMath';
 
-interface LiveSimulatorsLabProps {
+interface Props {
   lang: Language;
 }
 
-/**
- * Draws Clinical Millimeter Grid Paper on an HTML5 Canvas (#F8FAFC background,
- * minor grid every 12px in #E2E8F0, major grid every 60px in #CBD5E1).
- */
-function drawClinicalMillimeterGrid(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number
-) {
-  ctx.fillStyle = '#F8FAFC';
-  ctx.fillRect(0, 0, width, height);
+export const LiveSimulatorsLab: React.FC<Props> = ({ lang }) => {
+  const isAr = lang === 'ar';
 
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = '#E2E8F0';
-  for (let x = 0; x <= width; x += 12) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
-  }
-  for (let y = 0; y <= height; y += 12) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = '#CBD5E1';
-  for (let x = 0; x <= width; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
-  }
-  for (let y = 0; y <= height; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
-  }
-}
-
-export const LiveSimulatorsLab: React.FC<LiveSimulatorsLabProps> = ({ lang }) => {
-  // Simulator 1 state: POS rPPG + NLMS + Zero-Phase Butterworth filtfilt + SDPPG
-  const [heartRateBpm, setHeartRateBpm] = useState<number>(72);
-  const [arterialStiffness, setArterialStiffness] = useState<number>(0.35);
-  const [motionNoise, setMotionNoise] = useState<number>(0.42);
+  // Simulator 1: POS rPPG + SDPPG State
+  const [hrBpm, setHrBpm] = useState<number>(72);
+  const [stiffness, setStiffness] = useState<number>(0.32);
+  const [motionNoise, setMotionNoise] = useState<number>(0.45);
   const [enableFilter, setEnableFilter] = useState<boolean>(true);
-  const sim1CanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Simulator 2 state: 20kHz CW Ultrasonic Phased Sonar
-  const [sonarMode, setSonarMode] = useState<SonarBreathingMode>('normal');
-  const sim2CanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Simulator 3 state: 12-Feature Hybrid LiteRT + Moens-Korteweg Hemodynamic & SQI Gate
-  const [pttMs, setPttMs] = useState<number>(195);
-  const [simSqi, setSimSqi] = useState<number>(0.86);
-  const [fitzpatrickScale, setFitzpatrickScale] = useState<1 | 2 | 3 | 4 | 5 | 6>(4);
-  const sim3CanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Simulator 4 state: CIE L*a*b* Bradford D65 Ocular Chromaticity
-  const [colorTempKelvin, setColorTempKelvin] = useState<number>(3200);
-  const [trueBilirubinMgDl, setTrueBilirubinMgDl] = useState<number>(1.8);
-  const [trueHemoglobinGDl, setTrueHemoglobinGDl] = useState<number>(10.6);
-  const sim4CanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  const rppgSnapshot = simulatePosRppgWindow({
-    heartRateBpm,
-    arterialStiffness,
+  const rppgSnap = simulatePosRppgWindow({
+    heartRateBpm: hrBpm,
+    arterialStiffness: stiffness,
     motionNoise,
     enableFilter,
   });
 
-  const sonarSnapshot = simulateUltrasonicSonar(sonarMode, 0);
+  // Simulator 2: 20kHz Near-Ultrasonic Acoustic Phase Model State
+  const [sonarMode, setSonarMode] = useState<SonarBreathingMode>('normal');
+  const [sonarPhaseOffset, setSonarPhaseOffset] = useState<number>(0);
+  const sonarSnap = simulateUltrasonicSonar(sonarMode, sonarPhaseOffset);
 
-  const hemoOutput = computeHemodynamicEstimate({
-    ageYears: 48,
+  // Simulator 3: Parametric Hemodynamic & SQI Abstention Explorer State
+  const [ageYears, setAgeYears] = useState<number>(46);
+  const [pttMs, setPttMs] = useState<number>(195);
+  const [simSqi, setSimSqi] = useState<number>(0.82);
+  const [fitzpatrick, setFitzpatrick] = useState<1 | 2 | 3 | 4 | 5 | 6>(4);
+  const [baselineSbp, setBaselineSbp] = useState<number>(122);
+  const [onBpMeds, setOnBpMeds] = useState<boolean>(false);
+
+  const hemoOut = computeHemodynamicEstimate({
+    ageYears,
     heightCm: 174,
-    weightKg: 81,
-    fitzpatrickScale,
-    onBpMeds: false,
-    heartRateBpm,
-    hrvRmssdMs: rppgSnapshot.rmssdMs,
+    weightKg: 79,
+    fitzpatrickScale: fitzpatrick,
+    onBpMeds,
+    heartRateBpm: hrBpm,
+    hrvRmssdMs: rppgSnap.rmssdMs,
     pttMs,
-    dicroticNotchRatio: rppgSnapshot.dicroticNotchRatio,
-    stiffnessIndexMs: rppgSnapshot.stiffnessIndexMs,
-    baselineSbp: 122,
+    dicroticNotchRatio: rppgSnap.dicroticNotchRatio,
+    stiffnessIndexMs: rppgSnap.stiffnessIndexMs,
+    baselineSbp,
     sqi: simSqi,
   });
 
-  const eyeLabOutput = computeEyeLabCalibration({
-    colorTempKelvin,
-    trueBilirubinMgDl,
-    trueHemoglobinGDl,
+  // Simulator 4: Ocular CIE L*a*b* Bradford Chromatic Adaptation State
+  const [kelvin, setKelvin] = useState<number>(3200);
+  const [trueBilirubin, setTrueBilirubin] = useState<number>(2.4);
+  const [trueHb, setTrueHb] = useState<number>(10.8);
+
+  const eyeOut = computeEyeLabCalibration({
+    colorTempKelvin: kelvin,
+    trueBilirubinMgDl: trueBilirubin,
+    trueHemoglobinGDl: trueHb,
   });
 
-  // Simulator 1 60fps Canvas Loop (POS rPPG + Zero-Phase filtfilt + SDPPG)
-  useEffect(() => {
-    let animId = 0;
-    let phaseShift = 0;
-
-    const render = () => {
-      const canvas = sim1CanvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const w = canvas.width;
-          const h = canvas.height;
-          drawClinicalMillimeterGrid(ctx, w, h);
-
-          const snap = simulatePosRppgWindow({
-            heartRateBpm,
-            arterialStiffness,
-            motionNoise,
-            enableFilter,
-          });
-
-          const n = snap.filteredSignal.length;
-
-          // Raw motion-corrupted trace (Dashed Crimson #DC2626)
-          ctx.strokeStyle = 'rgba(220, 38, 38, 0.55)';
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([4, 4]);
-          ctx.beginPath();
-          for (let i = 0; i < n; i++) {
-            const idx = (i + Math.floor(phaseShift)) % n;
-            const x = (i / (n - 1)) * (w - 24) + 12;
-            const y = h * 0.42 - snap.rawSignal[idx] * 46;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          // Zero-Phase filtfilt recovered PPG trace (Solid Clinical Blue #0284C7)
-          ctx.strokeStyle = '#0284C7';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          for (let i = 0; i < n; i++) {
-            const idx = (i + Math.floor(phaseShift)) % n;
-            const x = (i / (n - 1)) * (w - 24) + 12;
-            const y = h * 0.42 - snap.filteredSignal[idx] * 46;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-
-          // SDPPG 2nd derivative trace (Emerald #059669)
-          ctx.strokeStyle = '#059669';
-          ctx.lineWidth = 1.9;
-          ctx.beginPath();
-          for (let i = 0; i < n; i++) {
-            const idx = (i + Math.floor(phaseShift)) % n;
-            const x = (i / (n - 1)) * (w - 24) + 12;
-            const y = h * 0.8 - snap.sdppgSignal[idx] * 28;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-
-          ctx.fillStyle = '#0F172A';
-          ctx.font = '600 11px "JetBrains Mono", monospace';
-          ctx.fillText('Zero-Phase filtfilt PPG (0.0 rad) [Blue]', 12, 20);
-          ctx.fillStyle = '#DC2626';
-          ctx.fillText('Raw Tremor-Corrupted Trace [Dashed Red]', 12, 36);
-          ctx.fillStyle = '#059669';
-          ctx.fillText(
-            `SDPPG d²x/dt² (b/a=${snap.bOverA.toFixed(2)}, d/a=${snap.dOverA.toFixed(2)}) [Green]`,
-            12,
-            h - 10
-          );
-        }
-      }
-      phaseShift = (phaseShift + 0.45) % 180;
-      animId = requestAnimationFrame(render);
-    };
-
-    animId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animId);
-  }, [heartRateBpm, arterialStiffness, motionNoise, enableFilter]);
-
-  // Simulator 2 60fps Canvas Loop (20kHz CW Ultrasonic I/Q Sonar)
-  useEffect(() => {
-    let animId = 0;
-    let tick = 0;
-
-    const render = () => {
-      const canvas = sim2CanvasRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          const w = canvas.width;
-          const h = canvas.height;
-          drawClinicalMillimeterGrid(ctx, w, h);
-
-          const sim = simulateUltrasonicSonar(sonarMode, tick);
-
-          // Left side: I/Q Phasor Constellation Circle
-          const cx = 88;
-          const cy = h * 0.54;
-          const radius = 54;
-
-          ctx.strokeStyle = '#94A3B8';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-          ctx.stroke();
-
-          const latestIq = sim.iqPoints[sim.iqPoints.length - 1] ?? { i: 1, q: 0 };
-          const px = cx + latestIq.i * radius * 0.85;
-          const py = cy - latestIq.q * radius * 0.85;
-
-          ctx.strokeStyle = '#059669';
-          ctx.lineWidth = 2.2;
-          ctx.beginPath();
-          ctx.moveTo(cx, cy);
-          ctx.lineTo(px, py);
-          ctx.stroke();
-
-          ctx.fillStyle = sim.apneaDetected ? '#DC2626' : '#0284C7';
-          ctx.beginPath();
-          ctx.arc(px, py, 5.5, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Right side: Unwrapped Chest Wall Displacement Trace (mm)
-          const startX = 172;
-          const traceW = w - startX - 16;
-          const n = sim.chestDisplacementMm.length;
-
-          ctx.strokeStyle = sim.apneaDetected ? '#DC2626' : '#0284C7';
-          ctx.lineWidth = 2.4;
-          ctx.beginPath();
-          for (let i = 0; i < n; i++) {
-            const x = startX + (i / (n - 1)) * traceW;
-            const y = cy - (sim.chestDisplacementMm[i] / 5.5) * (h * 0.36);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-
-          ctx.fillStyle = '#0F172A';
-          ctx.font = '600 11px "JetBrains Mono", monospace';
-          ctx.fillText('20kHz I/Q Phasor', 34, 20);
-          ctx.fillStyle = sim.apneaDetected ? '#DC2626' : '#0F172A';
-          ctx.fillText(
-            sim.apneaDetected
-              ? `OBSTRUCTIVE APNEA >= 10s (Est. AHI=${sim.estimatedAhi})`
-              : `Thoracic Δd(t) · Peak=${sim.peakDisplacementMm}mm · RR=${sim.respiratoryRateBpm} BrPM`,
-            startX,
-            20
-          );
-        }
-      }
-      tick += 0.03;
-      animId = requestAnimationFrame(render);
-    };
-
-    animId = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(animId);
-  }, [sonarMode]);
-
-  // Simulator 3 Render (Moens-Korteweg PWV Curve + Pre-Neural SQI < 0.65 Abstention Gate)
-  useEffect(() => {
-    const canvas = sim3CanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-    drawClinicalMillimeterGrid(ctx, w, h);
-
-    // Plot Moens-Korteweg / Bramwell-Hill PTT -> SBP Curve
-    ctx.strokeStyle = '#0284C7';
-    ctx.lineWidth = 2.4;
-    ctx.beginPath();
-    for (let x = 24; x <= w - 24; x++) {
-      const ptt = 120 + ((x - 24) / (w - 48)) * 180; // 120ms to 300ms
-      const sbp = 122 + 28 * Math.log(210 / ptt);
-      const y = h - 28 - ((sbp - 90) / 100) * (h - 56);
-      if (x === 24) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-
-    // Current operating point marker
-    const curX = 24 + ((pttMs - 120) / 180) * (w - 48);
-    const curY = h - 28 - ((hemoOutput.estimatedSbp - 90) / 100) * (h - 56);
-
-    ctx.fillStyle = hemoOutput.safetyGuardBlocked ? '#DC2626' : '#059669';
-    ctx.beginPath();
-    ctx.arc(curX, Math.max(24, Math.min(h - 24, curY)), 6.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // If SQI < 0.65, draw prominent Pre-Neural Abstention Gate Banner
-    if (hemoOutput.safetyGuardBlocked) {
-      ctx.fillStyle = 'rgba(254, 242, 242, 0.94)';
-      ctx.fillRect(36, 48, w - 72, 96);
-      ctx.strokeStyle = '#DC2626';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(36, 48, w - 72, 96);
-
-      ctx.fillStyle = '#DC2626';
-      ctx.font = '700 13px "JetBrains Mono", monospace';
-      ctx.fillText('PRE-NEURAL GATE: SAFE ABSTENTION TRIGGERED (SQI < 0.65)', 54, 82);
-      ctx.fillStyle = '#0F172A';
-      ctx.font = '600 11px "JetBrains Mono", monospace';
-      ctx.fillText(
-        `Current SQI = ${simSqi.toFixed(2)} < 0.65 Threshold -> Neural BP/HbA1c Inference Blocked`,
-        54,
-        108
-      );
-      ctx.fillText('Action: Emit Bilingual TTS Guidance to Stabilize Forearm Posture', 54, 128);
-    } else {
-      ctx.fillStyle = '#0F172A';
-      ctx.font = '600 11px "JetBrains Mono", monospace';
-      ctx.fillText(
-        `Moens-Korteweg Curve · PTT=${pttMs}ms -> PWV=${hemoOutput.pwvMetersPerSec} m/s`,
-        16,
-        22
-      );
-      ctx.fillStyle = '#059669';
-      ctx.fillText(
-        `SQI=${simSqi.toFixed(2)} (PASS >= 0.65) · Fitzpatrick Melanin Comp=${hemoOutput.melaninCompensationFactor}x`,
-        16,
-        h - 10
-      );
-    }
-  }, [pttMs, simSqi, fitzpatrickScale, hemoOutput]);
-
-  // Simulator 4 Render (Bradford D65 CIE L*a*b* Ocular Chromaticity Inspector)
-  useEffect(() => {
-    const canvas = sim4CanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const h = canvas.height;
-    drawClinicalMillimeterGrid(ctx, w, h);
-
-    // Left Box: Uncalibrated Warm-Cast Sclera vs Right Box: Bradford D65 Calibrated Sclera & Conjunctiva
-    const warmCastShift = Math.round(((6500 - colorTempKelvin) / 3800) * 45);
-    const uncalB = Math.max(110, 235 - Math.round(trueBilirubinMgDl * 22) - warmCastShift);
-    const calB = Math.max(125, 235 - Math.round(trueBilirubinMgDl * 22));
-
-    // Uncalibrated ROI
-    ctx.fillStyle = `rgb(245, 236, ${uncalB})`;
-    ctx.fillRect(20, 36, w * 0.42, h - 62);
-    ctx.strokeStyle = '#DC2626';
-    ctx.lineWidth = 1.6;
-    ctx.strokeRect(20, 36, w * 0.42, h - 62);
-
-    // Bradford D65 Calibrated ROI
-    ctx.fillStyle = `rgb(242, 240, ${calB})`;
-    ctx.fillRect(w * 0.52, 36, w * 0.44, h - 62);
-    ctx.strokeStyle = '#059669';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(w * 0.52, 36, w * 0.44, h - 62);
-
-    // Conjunctival vascular band at bottom of calibrated ROI
-    const hbRed = Math.min(235, Math.round(145 + (trueHemoglobinGDl - 6.5) * 9));
-    ctx.fillStyle = `rgb(${hbRed}, 68, 76)`;
-    ctx.fillRect(w * 0.52 + 8, h - 68, w * 0.44 - 16, 34);
-
-    ctx.fillStyle = '#DC2626';
-    ctx.font = '600 11px "JetBrains Mono", monospace';
-    ctx.fillText(`Raw Uncalibrated (${colorTempKelvin}K): b*=${eyeLabOutput.uncalibratedBStar}`, 20, 22);
-    ctx.fillStyle = '#059669';
-    ctx.fillText(`Bradford D65 Locked: b*=${eyeLabOutput.calibratedBStar}`, w * 0.52, 22);
-    ctx.fillStyle = '#0F172A';
-    ctx.fillText(
-      `Laplacian Gate Var(∇²I) >= 110.0 PASS · Est. Hb=${eyeLabOutput.estimatedHemoglobinGDl} g/dL · Bili=${eyeLabOutput.estimatedBilirubinMgDl} mg/dL`,
-      20,
-      h - 10
-    );
-  }, [colorTempKelvin, trueBilirubinMgDl, trueHemoglobinGDl, eyeLabOutput]);
+  // Helper to convert 1D array to SVG polyline points
+  const toPolyline = (arr: number[], width: number, height: number, minVal: number, maxVal: number) => {
+    if (arr.length === 0) return '';
+    const range = Math.max(0.0001, maxVal - minVal);
+    return arr
+      .map((val, idx) => {
+        const x = (idx / (arr.length - 1)) * width;
+        const normY = (val - minVal) / range;
+        const y = height - Math.max(0, Math.min(1, normY)) * (height - 16) - 8;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  };
 
   return (
-    <section id="simulators" className="border-b border-slate-200 bg-white py-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
-          <p className="font-mono text-xs font-bold tracking-wider text-[#0284C7] uppercase">
-            {lang === 'en'
-              ? 'SECTION 05 · FOUR INTERACTIVE BIOPHYSICAL SIMULATORS (CLINICAL MILLIMETER GRID)'
-              : 'القسم 05 · المختبر الفيزيائي التفاعلي الحي (4 محاكيات على ورق رسم القلب الإكلينيكي)'}
-          </p>
-          <h2 className="mt-2 font-serif-editorial text-2xl font-bold text-[#0F172A] sm:text-3xl [text-wrap:balance]">
-            {lang === 'en'
-              ? 'Real-Time Mathematical Verification of Our Native C++17 & Oboe DSP Kernels'
-              : 'محاكاة حية للمعادلات الفيزيائية والخوارزميات المدمجة في نواة التطبيق'}
+    <section id="simulators" className="py-12 border-b border-slate-200 bg-slate-50/60">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-100 border border-amber-400 text-amber-950 text-xs font-mono font-bold uppercase tracking-wider mb-3">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-800" />
+            {isAr
+              ? 'مختبر النماذج الرياضية الاصطناعية التفاعلي (بيانات محاكاة — ليست قياسات مرضى)'
+              : 'INTERACTIVE MATHEMATICAL SIGNAL GENERATORS (SIMULATED DATA — NOT PATIENT RECORDINGS)'}
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight font-serif">
+            {isAr
+              ? 'المختبرات الرياضية التفاعلية الأربعة: الشفافية الكاملة لمعادلات التوليد الاصطناعي'
+              : 'Four Interactive Mathematical Signal Laboratories: Full Synthetic Equation Transparency'}
           </h2>
-          <p className="mt-2 text-sm text-[#1E293B]">
-            {lang === 'en'
-              ? 'Every simulator below executes the exact biophysical equations deployed in our Android NDK C++17 library on high-contrast Clinical Millimeter Grid Paper.'
-              : 'تعمل المحاكيات الأربعة أدناه بالمعادلات الفيزيائية الحقيقية المنفذة داخل مكتبة C++17 على خلفية ورق رسم القلب الإكلينيكي المليمتري.'}
+          <p className="mt-2 text-sm text-slate-600 max-w-4xl leading-relaxed">
+            {isAr
+              ? 'تعمل جميع الرسوم الموجية والمخرجات الرقمية في هذا القسم بواسطة دوال رياضية حتمية مكتوبة بلغة TypeScript داخل الملف src/utils/biophysicsMath.ts. تم وضع شارة "SIMULATED DATA — NOT A CLINICAL MEASUREMENT" والمعادلة الرياضية المولدة فوق كل محاكي لضمان عدم الخلط بين النمذجة الفيزيائية الحيوية وبين القياسات السريرية الفعلية.'
+              : 'Every waveform and numerical readout in this section is generated in real time by deterministic TypeScript mathematical functions in src/utils/biophysicsMath.ts. Each simulator displays a permanent "SIMULATED DATA — NOT A CLINICAL MEASUREMENT" badge and its exact synthetic generator equation so reviewers can inspect the underlying mathematical assumptions directly.'}
           </p>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-2">
-          {/* Simulator 1: POS rPPG + NLMS + Zero-Phase Butterworth filtfilt */}
-          <article className="min-w-0 rounded-xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-base font-bold text-[#0F172A]">
-                {lang === 'en'
-                  ? '01. POS rPPG + NLMS & Zero-Phase Butterworth filtfilt'
-                  : '01. محاكي POS rPPG وإلغاء الاهتزاز والترشيح الصفري الطور (filtfilt)'}
-              </h3>
-              <span dir="ltr" className="font-mono text-xs font-bold text-[#0284C7] tabular-nums">
-                SQI: {rppgSnapshot.sqi.toFixed(2)} · RMSSD: {rppgSnapshot.rmssdMs} ms
-              </span>
-            </div>
-
-            <canvas
-              ref={sim1CanvasRef}
-              width={540}
-              height={210}
-              className="mt-4 w-full rounded-lg border border-slate-300 bg-[#F8FAFC]"
-            />
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-3 text-xs">
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim1-hr">HR (BPM)</label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {heartRateBpm}
-                  </span>
-                </div>
-                <input
-                  id="sim1-hr"
-                  type="range"
-                  min={52}
-                  max={135}
-                  value={heartRateBpm}
-                  onChange={(e) => setHeartRateBpm(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#0284C7]"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim1-stiff">
-                    {lang === 'en' ? 'Stiffness' : 'تصلب الشريان'}
-                  </label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {arterialStiffness.toFixed(2)}
-                  </span>
-                </div>
-                <input
-                  id="sim1-stiff"
-                  type="range"
-                  min={0.05}
-                  max={0.95}
-                  step={0.05}
-                  value={arterialStiffness}
-                  onChange={(e) => setArterialStiffness(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#D97757]"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim1-noise">
-                    {lang === 'en' ? 'Hand Tremor' : 'اهتزاز اليد'}
-                  </label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {Math.round(motionNoise * 100)}%
-                  </span>
-                </div>
-                <input
-                  id="sim1-noise"
-                  type="range"
-                  min={0}
-                  max={0.95}
-                  step={0.05}
-                  value={motionNoise}
-                  onChange={(e) => setMotionNoise(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#DC2626]"
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs">
-              <label className="inline-flex items-center gap-2 font-medium text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enableFilter}
-                  onChange={(e) => setEnableFilter(e.target.checked)}
-                  className="rounded border-slate-300 accent-[#0284C7]"
-                />
-                <span>
-                  {lang === 'en'
-                    ? 'Enable NLMS + Zero-Phase 4th-Order Butterworth filtfilt'
-                    : 'تفعيل مرشح NLMS والترشيح الصفري الطور filtfilt'}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* =====================================================================
+              SIMULATOR 1: POS rPPG + SDPPG + Motion Noise & SQI Gate (V1 Core)
+             ===================================================================== */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              {/* Mandatory Permanent Simulated Badge */}
+              <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold text-amber-950 uppercase">
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                  {isAr
+                    ? 'بيانات اصطناعية محاكاة — ليست قياساً سريرياً لمريض'
+                    : 'SIMULATED DATA — NOT A CLINICAL MEASUREMENT'}
                 </span>
-              </label>
-              <span dir="ltr" className="font-mono font-bold text-[#059669] tabular-nums">
-                SI: {rppgSnapshot.stiffnessIndexMs} m/s · Notch: {rppgSnapshot.dicroticNotchRatio}
-              </span>
-            </div>
-          </article>
-
-          {/* Simulator 2: 20kHz CW Ultrasonic I/Q Phased Sonar */}
-          <article className="min-w-0 rounded-xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-base font-bold text-[#0F172A]">
-                {lang === 'en'
-                  ? '02. 20kHz CW Ultrasonic I/Q Demodulation & Apnea Detector'
-                  : '02. محاكي رادار السونار الصوتي (20kHz I/Q) وكشف انقطاع التنفس'}
-              </h3>
-              <span
-                dir="ltr"
-                className={`font-mono text-xs font-bold tabular-nums ${
-                  sonarSnapshot.apneaDetected ? 'text-[#DC2626]' : 'text-[#059669]'
-                }`}
-              >
-                {sonarSnapshot.apneaDetected
-                  ? 'APNEA ALARM (>=10s)'
-                  : `AHI: ${sonarSnapshot.estimatedAhi} events/hr`}
-              </span>
-            </div>
-
-            <canvas
-              ref={sim2CanvasRef}
-              width={540}
-              height={210}
-              className="mt-4 w-full rounded-lg border border-slate-300 bg-[#F8FAFC]"
-            />
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {(['normal', 'hypopnea', 'apnea'] as SonarBreathingMode[]).map((mode) => {
-                const active = sonarMode === mode;
-                const label =
-                  mode === 'normal'
-                    ? lang === 'en'
-                      ? 'Normal Eupnea (15 BrPM)'
-                      : 'تنفس طبيعي منتظم'
-                    : mode === 'hypopnea'
-                      ? lang === 'en'
-                        ? 'Hypopnea (>30% Drop)'
-                        : 'ضعف تنفس جزئي (Hypopnea)'
-                      : lang === 'en'
-                        ? 'Obstructive Apnea (>=10s Flatline)'
-                        : 'انقطاع تنفس انسدادي (>=10 ثوانٍ)';
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setSonarMode(mode)}
-                    className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      active
-                        ? mode === 'apnea'
-                          ? 'border-[#DC2626] bg-[#DC2626] text-white'
-                          : 'border-[#0284C7] bg-[#0284C7] text-white'
-                        : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs font-mono text-slate-600">
-              <span dir="ltr">λ = 17.15 mm @ f_c = 20,000 Hz (48kHz Unprocessed)</span>
-              <span dir="ltr" className="font-bold text-[#0284C7]">
-                Δφ = {sonarSnapshot.phaseShiftRad} rad
-              </span>
-            </div>
-          </article>
-
-          {/* Simulator 3: Moens-Korteweg Hemodynamics & Pre-Neural SQI < 0.65 Abstention Gate */}
-          <article className="min-w-0 rounded-xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-base font-bold text-[#0F172A]">
-                {lang === 'en'
-                  ? '03. Moens-Korteweg BP/HbA1c & Pre-Neural SQI < 0.65 Abstention Gate'
-                  : '03. محاكي ضغط الدم والسكر التراكمي وبوابة الامتناع السريري (SQI < 0.65)'}
-              </h3>
-              <span
-                dir="ltr"
-                data-testid="sim3-abstention-badge"
-                className={`font-mono text-xs font-bold tabular-nums ${
-                  hemoOutput.safetyGuardBlocked ? 'text-[#DC2626]' : 'text-[#059669]'
-                }`}
-              >
-                {hemoOutput.safetyGuardBlocked
-                  ? 'SAFE ABSTENTION TRIGGERED'
-                  : `SBP/DBP: ${hemoOutput.estimatedSbp}/${hemoOutput.estimatedDbp} mmHg · HbA1c: ${hemoOutput.estimatedHbA1c}%`}
-              </span>
-            </div>
-
-            <canvas
-              ref={sim3CanvasRef}
-              width={540}
-              height={210}
-              className="mt-4 w-full rounded-lg border border-slate-300 bg-[#F8FAFC]"
-            />
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-3 text-xs">
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim3-ptt">PTT (ms)</label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {pttMs} ms
-                  </span>
-                </div>
-                <input
-                  id="sim3-ptt"
-                  type="range"
-                  min={130}
-                  max={280}
-                  step={5}
-                  value={pttMs}
-                  onChange={(e) => setPttMs(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#0284C7]"
-                />
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900">
+                  V1 CORE MODEL (SIMULATED)
+                </span>
               </div>
 
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim3-sqi">Signal Quality (SQI)</label>
-                  <span
-                    dir="ltr"
-                    className={`font-mono font-bold tabular-nums ${
-                      simSqi < 0.65 ? 'text-[#DC2626]' : 'text-[#059669]'
-                    }`}
-                  >
-                    {simSqi.toFixed(2)}
-                  </span>
-                </div>
-                <input
-                  id="sim3-sqi"
-                  type="range"
-                  min={0.35}
-                  max={0.98}
-                  step={0.03}
-                  value={simSqi}
-                  onChange={(e) => setSimSqi(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#059669]"
-                />
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-5 h-5 text-blue-800" />
+                <h3 className="text-base font-bold text-slate-900">
+                  {isAr
+                    ? '1. مولد موجة النبض الشرياني الاصطناعي (POS rPPG & SDPPG) وبوابة SQI'
+                    : '1. Synthetic Multi-Harmonic POS rPPG, SDPPG & SQI Gate Simulator'}
+                </h3>
               </div>
 
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim3-fitz">Fitzpatrick (I–VI)</label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    Type {fitzpatrickScale}
-                  </span>
+              {/* Exact Mathematical Equation Box */}
+              <div className="p-2.5 rounded-lg bg-slate-900 text-slate-100 font-mono text-[10.5px] mb-3 overflow-x-auto">
+                <div className="text-amber-300 font-bold mb-0.5">
+                  // Generator: simulatePosRppgWindow() in src/utils/biophysicsMath.ts
                 </div>
-                <input
-                  id="sim3-fitz"
-                  type="range"
-                  min={1}
-                  max={6}
-                  step={1}
-                  value={fitzpatrickScale}
-                  onChange={(e) =>
-                    setFitzpatrickScale(Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6)
-                  }
-                  className="mt-1 w-full accent-[#D97757]"
-                />
+                <div>
+                  x_clean(t) = exp(-((φ-0.16)/0.068)²) + A_ref·exp(-((φ-c_ref)/0.085)²) + A_dia·exp(-((φ-c_dia)/0.095)²) - 0.28
+                </div>
+                <div>
+                  n_motion(t) = noise · [0.55·sin(2π·4.2t + 0.4) + 0.38·sin(2π·0.28t) + 0.22·cos(2π·7.8t)]
+                </div>
+              </div>
+
+              {/* Interactive Sliders */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'معدل النبض الاصطناعي:' : 'Synthetic HR:'}</span>
+                    <span className="font-mono text-blue-900">{hrBpm} BPM</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={50}
+                    max={140}
+                    value={hrBpm}
+                    onChange={(e) => setHrBpm(Number(e.target.value))}
+                    aria-label="Synthetic Heart Rate BPM"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'معامل الصلابة الشريانية:' : 'Stiffness Param:'}</span>
+                    <span className="font-mono text-blue-900">{stiffness.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={stiffness}
+                    onChange={(e) => setStiffness(Number(e.target.value))}
+                    aria-label="Arterial Stiffness Parameter"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'ضوضاء الحركة (4.2Hz):' : 'Motion Noise:'}</span>
+                    <span className="font-mono text-rose-800">{motionNoise.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={motionNoise}
+                    onChange={(e) => setMotionNoise(Number(e.target.value))}
+                    aria-label="Synthetic Motion Noise"
+                    className="w-full accent-rose-700 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  onClick={() => setEnableFilter(!enableFilter)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold border transition cursor-pointer ${
+                    enableFilter
+                      ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                      : 'bg-slate-100 text-slate-700 border-slate-300'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  {enableFilter
+                    ? isAr
+                      ? 'الترشيح الأمامي-الخلفي (Zero-Phase Smoothing): مفعل'
+                      : 'Zero-Phase Forward-Backward Smoothing: ON'
+                    : isAr
+                      ? 'الترشيح الأمامي-الخلفي: متوقف (إشارة خام)'
+                      : 'Zero-Phase Smoothing: OFF (Raw Corrupted)'}
+                </button>
+
+                <span
+                  className={`font-mono text-xs font-bold px-2.5 py-1 rounded border ${
+                    rppgSnap.sqi >= 0.65
+                      ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                      : 'bg-rose-100 text-rose-900 border-rose-300'
+                  }`}
+                >
+                  SQI = {rppgSnap.sqi.toFixed(2)} {rppgSnap.sqi >= 0.65 ? '(GATE PASS)' : '(ABSTAIN / BLOCK)'}
+                </span>
+              </div>
+
+              {/* Dual SVG Plot: Filtered vs Raw Wave + SDPPG */}
+              <div className="space-y-2">
+                <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
+                    <span>
+                      {isAr
+                        ? 'موجة POS rPPG الاصطناعية (180 عينة / نافذة 3.0 ثانية غير سببية)'
+                        : 'Synthetic POS rPPG Window (180 samples / 3.0s non-causal buffer)'}
+                    </span>
+                    <span className="text-emerald-400">Green: Filtered | Red: Raw Motion-Corrupted</span>
+                  </div>
+                  <svg viewBox="0 0 520 90" className="w-full h-22">
+                    <polyline
+                      fill="none"
+                      stroke="#f43f5e"
+                      strokeWidth="1.2"
+                      strokeOpacity="0.65"
+                      points={toPolyline(rppgSnap.rawSignal, 520, 90, -1.2, 1.8)}
+                    />
+                    <polyline
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth="2.2"
+                      points={toPolyline(rppgSnap.filteredSignal, 520, 90, -1.2, 1.8)}
+                    />
+                  </svg>
+                </div>
+
+                <div className="p-2 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
+                    <span>
+                      {isAr
+                        ? 'المشتقة الثانية للموجة (SDPPG = d²x/dt²) ونسب المعالم الاصطلاحية'
+                        : 'Second Derivative Acceleration Plethysmogram (SDPPG = d²x/dt²)'}
+                    </span>
+                    <span className="text-sky-400">
+                      b/a = {rppgSnap.bOverA} | d/a = {rppgSnap.dOverA} | Notch = {rppgSnap.dicroticNotchRatio}
+                    </span>
+                  </div>
+                  <svg viewBox="0 0 520 65" className="w-full h-16">
+                    <polyline
+                      fill="none"
+                      stroke="#38bdf8"
+                      strokeWidth="1.8"
+                      points={toPolyline(rppgSnap.sdppgSignal, 520, 65, -2.5, 2.5)}
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs font-mono text-slate-600">
-              <span>
-                {lang === 'en'
-                  ? 'Drag SQI below 0.65 to test Pre-Neural Clinical Abstention'
-                  : 'اسحب مؤشر SQI لأقل من 0.65 لاختبار الامتناع السريري الآمن'}
-              </span>
-              <span dir="ltr" className="font-bold text-[#0284C7]">
-                PWV = {hemoOutput.pwvMetersPerSec} m/s
-              </span>
+            <div className="mt-3 pt-2.5 border-t border-slate-100 text-[11px] text-slate-500 leading-relaxed">
+              {isAr
+                ? 'ملاحظة هندسية (القسم 5.4): يعمل مرشح filtfilt غير السببي على نافذة مخزنة بطول 3.0 ثانية (180 عينة عند 60Hz)، مما يضيف زمن تجميع نافذة مقابل إلغاء تشوه الطور.'
+                : 'Engineering Note (Audit Section 5.4): Forward-backward zero-phase filtering operates on a buffered 3.0s (180-sample @ 60Hz) window, trading window buffering latency for zero phase distortion.'}
             </div>
-          </article>
+          </div>
 
-          {/* Simulator 4: Bradford D65 CIE L*a*b* Ocular Colorimetry */}
-          <article className="min-w-0 rounded-xl border border-slate-200 bg-[#F8FAFC] p-6 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-base font-bold text-[#0F172A]">
-                {lang === 'en'
-                  ? '04. Bradford D65 CIE L*a*b* Ocular Anemia & Jaundice Calibration'
-                  : '04. محاكي معايرة ألوان العين CIE L*a*b* (فقر الدم واليرقان)'}
-              </h3>
-              <span dir="ltr" className="font-mono text-xs font-bold text-[#059669] tabular-nums">
-                Δb* Bias Removed: -{eyeLabOutput.illuminantDeltaShift}
-              </span>
-            </div>
-
-            <canvas
-              ref={sim4CanvasRef}
-              width={540}
-              height={210}
-              className="mt-4 w-full rounded-lg border border-slate-300 bg-[#F8FAFC]"
-            />
-
-            <div className="mt-4 grid gap-4 sm:grid-cols-3 text-xs">
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim4-cct">Room CCT (K)</label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {colorTempKelvin}K
-                  </span>
-                </div>
-                <input
-                  id="sim4-cct"
-                  type="range"
-                  min={2700}
-                  max={6500}
-                  step={100}
-                  value={colorTempKelvin}
-                  onChange={(e) => setColorTempKelvin(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#0284C7]"
-                />
+          {/* =====================================================================
+              SIMULATOR 2: 20 kHz Near-Ultrasonic Acoustic Phase Model (Exploratory)
+             ===================================================================== */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              {/* Mandatory Permanent Simulated Badge */}
+              <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold text-amber-950 uppercase">
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                  {isAr
+                    ? 'بيانات اصطناعية محاكاة — ليست قياساً سريرياً لمريض'
+                    : 'SIMULATED DATA — NOT A CLINICAL MEASUREMENT'}
+                </span>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-900">
+                  EXPLORATORY ACOUSTIC MODEL (PROPOSED)
+                </span>
               </div>
 
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim4-bili">Bilirubin (mg/dL)</label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {trueBilirubinMgDl.toFixed(1)}
-                  </span>
-                </div>
-                <input
-                  id="sim4-bili"
-                  type="range"
-                  min={0.4}
-                  max={6.0}
-                  step={0.2}
-                  value={trueBilirubinMgDl}
-                  onChange={(e) => setTrueBilirubinMgDl(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#D97757]"
-                />
+              <div className="flex items-center gap-2 mb-2">
+                <Radio className="w-5 h-5 text-indigo-800" />
+                <h3 className="text-base font-bold text-slate-900">
+                  {isAr
+                    ? '2. النموذج الرياضي الاستكشافي للطور الصوتي شبه فوق الصوتي (20 kHz)'
+                    : '2. Exploratory 20 kHz Near-Ultrasonic Acoustic Phase-Modulation Simulator'}
+                </h3>
               </div>
 
-              <div>
-                <div className="flex justify-between font-semibold text-slate-700">
-                  <label htmlFor="sim4-hb">True Hb (g/dL)</label>
-                  <span dir="ltr" className="font-mono font-bold text-[#0F172A] tabular-nums">
-                    {trueHemoglobinGDl.toFixed(1)}
-                  </span>
+              {/* Exact Mathematical Equation Box */}
+              <div className="p-2.5 rounded-lg bg-slate-900 text-slate-100 font-mono text-[10.5px] mb-3 overflow-x-auto">
+                <div className="text-amber-300 font-bold mb-0.5">
+                  // Generator: simulateUltrasonicSonar() in src/utils/biophysicsMath.ts
                 </div>
-                <input
-                  id="sim4-hb"
-                  type="range"
-                  min={7.0}
-                  max={16.0}
-                  step={0.5}
-                  value={trueHemoglobinGDl}
-                  onChange={(e) => setTrueHemoglobinGDl(Number(e.target.value))}
-                  className="mt-1 w-full accent-[#DC2626]"
-                />
+                <div>
+                  d_chest(t) = A_mode(t)·sin(2π·f_resp·t) + 0.18·sin(2π·1.15t) | λ = c / f_c = 343,000 / 20,000 = 17.15 mm
+                </div>
+                <div>
+                  φ(t) = (4π · d_chest(t)) / λ ; I(t) = cos(φ(t)) + I_clutter , Q(t) = sin(φ(t)) + Q_clutter
+                </div>
+              </div>
+
+              {/* Synthetic Regime Selector Buttons (No "Patient" Labels - Audit Section 2.2) */}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <button
+                  onClick={() => setSonarMode('normal')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                    sonarMode === 'normal'
+                      ? 'bg-indigo-900 text-white border-indigo-900'
+                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                  }`}
+                >
+                  {isAr ? 'موجة تنفس منتظم اصطناعية (0.25 Hz)' : 'Synthetic Eupnea Waveform (0.25 Hz)'}
+                </button>
+                <button
+                  onClick={() => setSonarMode('hypopnea')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                    sonarMode === 'hypopnea'
+                      ? 'bg-amber-700 text-white border-amber-700'
+                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                  }`}
+                >
+                  {isAr ? 'نموذج انخفاض سعة اصطناعي (>30%)' : 'Synthetic Amplitude-Drop Model (>30%)'}
+                </button>
+                <button
+                  onClick={() => setSonarMode('apnea')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
+                    sonarMode === 'apnea'
+                      ? 'bg-rose-800 text-white border-rose-800'
+                      : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                  }`}
+                >
+                  {isAr ? 'نموذج توقف موجة اصطناعي (11 ثانية)' : 'Synthetic Flatline Model (11s Window)'}
+                </button>
+                <button
+                  onClick={() => setSonarPhaseOffset((prev) => prev + 0.8)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-mono bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 cursor-pointer"
+                >
+                  {isAr ? 'إزاحة الطور الزمني +0.8s' : 'Step Phase +0.8s'}
+                </button>
+              </div>
+
+              {/* Waveform & I/Q Constellation */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2 p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400 mb-1">
+                    <span>
+                      {isAr
+                        ? 'إزاحة جدار الصدر الاصطناعية (ملم خلال نافذة 18 ثانية)'
+                        : 'Synthetic Chest-Wall Displacement d(t) [mm over 18s window]'}
+                    </span>
+                    <span className="text-indigo-300">Peak: ±{sonarSnap.peakDisplacementMm} mm</span>
+                  </div>
+                  <svg viewBox="0 0 360 95" className="w-full h-24">
+                    <polyline
+                      fill="none"
+                      stroke={sonarMode === 'apnea' ? '#f43f5e' : sonarMode === 'hypopnea' ? '#f59e0b' : '#818cf8'}
+                      strokeWidth="2.2"
+                      points={toPolyline(sonarSnap.chestDisplacementMm, 360, 95, -5.5, 5.5)}
+                    />
+                  </svg>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex flex-col items-center justify-center">
+                  <div className="text-[10px] font-mono text-slate-400 mb-1 text-center">
+                    {isAr ? 'مخطط الطور المتعامد I/Q' : 'Baseband I/Q Arc'}
+                  </div>
+                  <svg viewBox="0 0 100 100" className="w-22 h-22">
+                    <circle cx="50" cy="50" r="38" fill="none" stroke="#334155" strokeWidth="1" strokeDasharray="2 2" />
+                    {sonarSnap.iqPoints.slice(-35).map((pt, idx) => (
+                      <circle
+                        key={idx}
+                        cx={50 + pt.i * 34}
+                        cy={50 - pt.q * 34}
+                        r="2.2"
+                        fill="#38bdf8"
+                        fillOpacity={(idx + 5) / 40}
+                      />
+                    ))}
+                  </svg>
+                  <div className="text-[10px] font-mono text-sky-300 mt-1">
+                    Δφ = {sonarSnap.phaseShiftRad} rad
+                  </div>
+                </div>
+              </div>
+
+              {/* Mandatory AASM & 7 Hardware Constraints Disclosure (Audit Section 3.5 & 3.6) */}
+              <div className="mt-3 p-3 rounded-lg bg-amber-50/70 border border-amber-200 text-[11px] text-amber-950 space-y-1.5">
+                <div className="font-bold">
+                  {isAr
+                    ? 'قيود سريرية وفيزيائية إلزامية (إرشادات AASM والأسئلة العتادية السبعة):'
+                    : 'Mandatory Clinical & Acoustic Hardware Limitations (AASM Guidelines & Section 3.5–3.6):'}
+                </div>
+                <p>
+                  {isAr
+                    ? '• إرشادات AASM السريرية: تشخيص انقطاع التنفس الانسدادي (OSA) وحساب مؤشر AHI السريري يتطلبان تخطيط نوم متعدد القنوات (PSG) أو فحص نوم منزلي معتمد (HSAT) يقيس تدفق الهواء الأنفي/الفموي وتشبع الأكسجين (SpO2 >= 3% desaturation). حركة جدار الصدر وحدها لا تشخص OSA.'
+                    : '• AASM Clinical Guideline: Clinical OSA diagnosis and AHI scoring require multi-channel Polysomnography (PSG) or validated HSAT measuring nasal/oral airflow and arterial SpO2 desaturation (>=3%). Single-channel chest-wall motion CANNOT clinically diagnose OSA.'}
+                </p>
+                <p>
+                  {isAr
+                    ? '• الأسئلة الهندسية السبعة المفتوحة للتحقق العتادي: (1) هبوط استجابة سماعة الهاتف عند 20 kHz، (2) حساسية الميكروفون، (3) مرشحات النظام رغم AudioSource.UNPROCESSED، (4) هامش Nyquist عند 48 kHz (تردد 24 kHz)، (5) ثبات الطور I/Q، (6) تداخل الانعكاسات المتعددة للغرفة والأغطية، (7) الاستهلاك الحراري والبطارية خلال 8 ساعات.'
+                    : '• 7 Open Hardware Verification Questions: (1) Miniature speaker roll-off at 20 kHz, (2) MEMS mic sensitivity at 20 kHz, (3) OEM DSP filtering despite UNPROCESSED flag, (4) 48 kHz sampling Nyquist margin (24 kHz), (5) I/Q phase stability across frames, (6) Room/bedding multipath clutter, and (7) 8-hour thermal & battery drain.'}
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3 text-xs font-mono text-slate-600">
-              <span dir="ltr">
-                Calibrated b*={eyeLabOutput.calibratedBStar} · Erythema (a*/L*)=
-                {eyeLabOutput.calibratedErythemaIndex}
-              </span>
-              <span dir="ltr" className="font-bold text-[#059669]">
-                Illuminant-Invariant D65 Lock
-              </span>
+          {/* =====================================================================
+              SIMULATOR 3: Hemodynamic Parametric Equation Explorer & SQI Gate
+             ===================================================================== */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              {/* Mandatory Permanent Simulated Badge */}
+              <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold text-amber-950 uppercase">
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                  {isAr
+                    ? 'بيانات اصطناعية محاكاة — ليست قياساً سريرياً لمريض'
+                    : 'SIMULATED DATA — NOT A CLINICAL MEASUREMENT'}
+                </span>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-900">
+                  PARAMETRIC EQUATION EXPLORER (PROPOSED)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 mb-2">
+                <HeartPulse className="w-5 h-5 text-rose-800" />
+                <h3 className="text-base font-bold text-slate-900">
+                  {isAr
+                    ? '3. مستكشف معادلات Bramwell-Hill البارامترية وبوابة الامتناع (SQI < 0.65)'
+                    : '3. Parametric Bramwell-Hill Hemodynamic Explorer & SQI Abstention Gate'}
+                </h3>
+              </div>
+
+              {/* Exact Mathematical Equation Box */}
+              <div className="p-2.5 rounded-lg bg-slate-900 text-slate-100 font-mono text-[10.5px] mb-3 overflow-x-auto">
+                <div className="text-amber-300 font-bold mb-0.5">
+                  // Generator: computeHemodynamicEstimate() in src/utils/biophysicsMath.ts
+                </div>
+                <div>
+                  PWV = (0.48 · Height_m) / PTT_sec ; SBP_sim = SBP_base + 28·ln(0.21 / PTT_sec) + 0.24·(Age-35) + 2.1·(SI-7.5)
+                </div>
+                <div>
+                  Gate Rule: if (SQI &lt; 0.65) =&gt; ABSTAIN (Suppress all hemodynamic outputs)
+                </div>
+              </div>
+
+              {/* Sliders */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'مؤشر جودة الإشارة (SQI Gate):' : 'Input Signal Quality (SQI):'}</span>
+                    <span
+                      className={`font-mono font-bold ${
+                        simSqi < 0.65 ? 'text-rose-700' : 'text-emerald-800'
+                      }`}
+                    >
+                      {simSqi.toFixed(2)} {simSqi < 0.65 ? '(< 0.65 BLOCKED)' : '(>= 0.65 PASS)'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.3}
+                    max={0.95}
+                    step={0.03}
+                    value={simSqi}
+                    onChange={(e) => setSimSqi(Number(e.target.value))}
+                    aria-label="Simulated Signal Quality Index"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'زمن عبور النبضة الاصطناعي (PTT):' : 'Synthetic PTT Input:'}</span>
+                    <span className="font-mono text-blue-900">{pttMs} ms</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={135}
+                    max={290}
+                    step={5}
+                    value={pttMs}
+                    onChange={(e) => setPttMs(Number(e.target.value))}
+                    aria-label="Synthetic Pulse Transit Time ms"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'ضغط المعايرة الأساسي بالكفة (SBP_base):' : 'Baseline Cuff Calibration SBP:'}</span>
+                    <span className="font-mono text-blue-900">{baselineSbp} mmHg</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={95}
+                    max={160}
+                    step={1}
+                    value={baselineSbp}
+                    onChange={(e) => setBaselineSbp(Number(e.target.value))}
+                    aria-label="Baseline Cuff Calibration SBP"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'مقياس لون البشرة (Fitzpatrick I–VI):' : 'Skin Tone Scale (Fitzpatrick):'}</span>
+                    <span className="font-mono text-blue-900">
+                      Type {fitzpatrick} (Factor {hemoOut.melaninCompensationFactor})
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={6}
+                    step={1}
+                    value={fitzpatrick}
+                    onChange={(e) => setFitzpatrick(Number(e.target.value) as 1 | 2 | 3 | 4 | 5 | 6)}
+                    aria-label="Fitzpatrick Skin Tone Scale"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Output Display with Hard Abstention Gate */}
+              {hemoOut.safetyGuardBlocked ? (
+                <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 text-rose-950 text-xs">
+                  <div className="font-mono font-bold uppercase text-rose-900 flex items-center gap-2 mb-1">
+                    <ShieldAlert className="w-4 h-4 text-rose-700" />
+                    {isAr
+                      ? 'تم تفعيل بوابة الامتناع الواعية بعدم اليقين (SQI < 0.65 — ABSTAINED)'
+                      : 'UNCERTAINTY-AWARE ABSTENTION GATE TRIGGERED (SQI < 0.65 — OUTPUT BLOCKED)'}
+                  </div>
+                  <p>
+                    {isAr
+                      ? 'تم حجب جميع المخرجات الهيموديناميكية لمنع إخراج أرقام مضللة من نافذة إشارة منخفضة الجودة. ارفع مؤشر SQI إلى 0.65 أو أعلى لمعاينة المعادلة البارامترية.'
+                      : 'All parametric outputs are suppressed to prevent false physiological estimates from a corrupted signal window. Increase SQI to >= 0.65 to inspect the parametric model.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2.5 text-center">
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <div className="text-[10px] font-mono text-slate-500">
+                      {isAr ? 'سرعة موجة النبض (PWV)' : 'Simulated PWV'}
+                    </div>
+                    <div className="text-base font-bold font-mono text-slate-900">
+                      {hemoOut.pwvMetersPerSec} m/s
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <div className="text-[10px] font-mono text-slate-500">
+                      {isAr ? 'ضغط بارامتري (بمعايرة كفة)' : 'Cuff-Anchored Parametric BP'}
+                    </div>
+                    <div className="text-base font-bold font-mono text-blue-900">
+                      {hemoOut.estimatedSbp}/{hemoOut.estimatedDbp} mmHg
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200">
+                    <div className="text-[10px] font-mono text-amber-900">
+                      {isAr ? 'فرضية استكشافية غير مصادق عليها' : 'Unvalidated Proxy Hypothesis'}
+                    </div>
+                    <div className="text-xs font-bold font-mono text-amber-950 mt-0.5">
+                      HbA1c Requires Lab Blood Test
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mandatory PTT vs PAT & IEEE 1708-2025 vs ISO 81060-2 Disclosure (Audit Section 3.2, 3.3, 3.7, 3.9) */}
+              <div className="mt-3 p-3 rounded-lg bg-slate-100 border border-slate-200 text-[11px] text-slate-700 space-y-1">
+                <div>
+                  <strong>{isAr ? 'الفرق بين PTT وPAT والمعايرة:' : 'PTT vs. PAT & Cuff Calibration (Section 3.2–3.3):'}</strong>{' '}
+                  {isAr
+                    ? 'زمن عبور النبضة (PTT) يُقاس بين نقطتين شريانيتين، بينما زمن وصول النبضة (PAT) من موجة R في ECG يشمل فترة ما قبل القذف القلبي المتغيرة (PEP). كلاهما يتطلب معايرة أولية ودورية بجهاز كفة مرجعي (ISO 81060-2:2018)، ويخضع تقييم الأجهزة القابلة للارتداء بدون كفة لمعيار IEEE Std 1708-2025.'
+                    : 'Pulse Transit Time (PTT) is measured between two arterial sites, whereas Pulse Arrival Time (PAT) includes the variable Pre-Ejection Period (PEP). Cuffless tracking requires baseline and periodic recalibration against an ISO 81060-2:2018 cuff sphygmomanometer and evaluation under IEEE Std 1708-2025.'}
+                </div>
+                <div>
+                  <strong>{isAr ? 'تنبيه معامل البشرة وHbA1c (القسم 3.7 و3.9):' : 'Skin-Tone Factor & HbA1c Caveat (Section 3.7 & 3.9):'}</strong>{' '}
+                  {isAr
+                    ? 'معامل الميلانين الخطي (1 + 0.018*(Fitzpatrick-1)) هو عنصر نائب توضيحي لا يغني عن المعايرة التجريبية عبر Fitzpatrick I–VI. كما تم إزالة HbA1c من قدرات النظام الحالية لأن السكر التراكمي يتطلب تحليلاً مخبرياً لدم وريدي.'
+                    : 'The linear multiplier 1 + 0.018*(Fitzpatrick-1) is an illustrative placeholder, not a substitute for multi-device empirical skin-tone calibration. HbA1c is excluded from V1 capabilities as clinical HbA1c requires venous blood laboratory assay.'}
+                </div>
+              </div>
             </div>
-          </article>
+          </div>
+
+          {/* =====================================================================
+              SIMULATOR 4: Ocular CIE L*a*b* Bradford Chromatic Adaptation (Exploratory)
+             ===================================================================== */}
+          <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between">
+            <div>
+              {/* Mandatory Permanent Simulated Badge */}
+              <div className="mb-3 p-2.5 rounded-lg bg-amber-50 border border-amber-300 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold text-amber-950 uppercase">
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                  {isAr
+                    ? 'بيانات اصطناعية محاكاة — ليست قياساً سريرياً لمريض'
+                    : 'SIMULATED DATA — NOT A CLINICAL MEASUREMENT'}
+                </span>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-sky-100 text-sky-900">
+                  EXPLORATORY COLORIMETRY (PROPOSED)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="w-5 h-5 text-emerald-800" />
+                <h3 className="text-base font-bold text-slate-900">
+                  {isAr
+                    ? '4. محاكي التكيف اللوني Bradford D65 لصلبة العين والملتحمة (CIE L*a*b*)'
+                    : '4. Exploratory Ocular CIE L*a*b* & Bradford D65 Illuminant Shift Simulator'}
+                </h3>
+              </div>
+
+              {/* Exact Mathematical Equation Box */}
+              <div className="p-2.5 rounded-lg bg-slate-900 text-slate-100 font-mono text-[10.5px] mb-3 overflow-x-auto">
+                <div className="text-amber-300 font-bold mb-0.5">
+                  // Generator: computeEyeLabCalibration() in src/utils/biophysicsMath.ts
+                </div>
+                <div>
+                  Chain: sRGB -&gt; Inverse Gamma Linear RGB -&gt; Sensor CCM -&gt; CIE XYZ -&gt; Bradford M_A to D65 (6500K) -&gt; CIE L*a*b*
+                </div>
+                <div>
+                  b*_uncal = b*_D65 + 16.4 · ((6500 - T_kelvin) / 3800) ; (a*/L*)_uncal = (a*/L*)_D65 + 0.14 · ((6500 - T_kelvin) / 3800)
+                </div>
+              </div>
+
+              {/* Sliders */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'حرارة الإضاءة المحيطة:' : 'Illuminant Temp:'}</span>
+                    <span className="font-mono text-amber-800">{kelvin} K</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={2700}
+                    max={6500}
+                    step={100}
+                    value={kelvin}
+                    onChange={(e) => setKelvin(Number(e.target.value))}
+                    aria-label="Ambient Illuminant Color Temperature Kelvin"
+                    className="w-full accent-amber-700 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'مدخل البيليروبين الافتراضي:' : 'Synthetic Bilirubin:'}</span>
+                    <span className="font-mono text-blue-900">{trueBilirubin.toFixed(1)} mg/dL</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.5}
+                    max={6.5}
+                    step={0.2}
+                    value={trueBilirubin}
+                    onChange={(e) => setTrueBilirubin(Number(e.target.value))}
+                    aria-label="Synthetic Bilirubin Input"
+                    className="w-full accent-blue-900 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                    <span>{isAr ? 'مدخل الهيموجلوبين الافتراضي:' : 'Synthetic Hb Input:'}</span>
+                    <span className="font-mono text-rose-800">{trueHb.toFixed(1)} g/dL</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={7.5}
+                    max={16.0}
+                    step={0.3}
+                    value={trueHb}
+                    onChange={(e) => setTrueHb(Number(e.target.value))}
+                    aria-label="Synthetic Hemoglobin Input"
+                    className="w-full accent-rose-800 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Comparison Cards: Uncalibrated vs D65 Calibrated */}
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-300">
+                  <div className="font-mono font-bold text-amber-950 mb-1">
+                    {isAr
+                      ? `بدون معايرة لونية (عند إضاءة ${kelvin}K)`
+                      : `Uncalibrated Raw Sensor (${kelvin}K Ambient)`}
+                  </div>
+                  <div className="space-y-1 font-mono text-[11px] text-amber-900">
+                    <div>
+                      Raw Scleral +b*: <strong>{eyeOut.uncalibratedBStar}</strong> (Shift +{eyeOut.illuminantDeltaShift})
+                    </div>
+                    <div>
+                      Raw Conjunctiva a*/L*: <strong>{eyeOut.uncalibratedErythemaIndex}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-300">
+                  <div className="font-mono font-bold text-emerald-950 mb-1 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                    {isAr
+                      ? 'بعد تحويل Bradford إلى المرجع القياسي D65'
+                      : 'After Bradford Adaptation to D65 Reference'}
+                  </div>
+                  <div className="space-y-1 font-mono text-[11px] text-emerald-900">
+                    <div>
+                      D65 Calibrated +b*: <strong>{eyeOut.calibratedBStar}</strong>
+                    </div>
+                    <div>
+                      D65 Calibrated a*/L*: <strong>{eyeOut.calibratedErythemaIndex}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mandatory CLSI EP17-A2 vs EP09/EP05 & Camera ISP Lock Disclosure (Audit Section 3.1 & 3.8) */}
+              <div className="mt-3 p-3 rounded-lg bg-slate-100 border border-slate-200 text-[11px] text-slate-700 space-y-1">
+                <div className="flex items-start gap-1.5">
+                  <Info className="w-4 h-4 text-blue-800 shrink-0 mt-0.5" />
+                  <div>
+                    <strong>
+                      {isAr
+                        ? 'تصحيح معيار CLSI EP17-A2 ومتطلبات المعايرة البصرية (القسم 3.1 و3.8):'
+                        : 'CLSI Standard Correction & Optical Calibration Requirements (Section 3.1 & 3.8):'}
+                    </strong>{' '}
+                    {isAr
+                      ? 'يختص معيار CLSI EP17-A2 بتحديد حدود الكشف التحليلية الدنيا (LoB, LoD, LoQ) للفحوصات المخبرية فقط، ولا يُستخدم لإثبات خطأ الهيموجلوبين (MAE) أو مساحة المنحنى للبيليروبين (AUC). إن تقييم الدقة الكمية مقابل تحاليل الدم الوريدية يتطلب معيار CLSI EP09 (مقارنة الطرق وتقدير الانحياز) ومعياري CLSI EP05/EP15 (التكرارية والدقة)، بالإضافة إلى قفل التوازن الأبيض التلقائي للكاميرا (AWB Lock) واستخدام بطاقة مرجعية لونية قياسية داخل الإطار.'
+                      : 'CLSI EP17-A2 defines analytical detection limits (LoB, LoD, LoQ) only and does NOT validate clinical Hb MAE or Bilirubin AUC. Quantitative method comparison against venous laboratory CBC/bilirubin requires CLSI EP09 (method comparison & bias estimation) and CLSI EP05/EP15 (precision), alongside locked camera ISP auto-white-balance and an in-frame physical color reference card.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
